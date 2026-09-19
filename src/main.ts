@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { ProblemDetailsFilter } from './common/filters/problem-details.filter';
 
 async function bootstrap() {
   const portServeur = process.env.PORT;
@@ -34,6 +35,8 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  app.useGlobalFilters(new ProblemDetailsFilter());
 
   await app.listen(Number(portServeur));
 }
