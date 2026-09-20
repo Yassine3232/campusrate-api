@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { ProblemDetailsFilter } from './common/filters/problem-details.filter';
 
@@ -37,6 +38,19 @@ async function bootstrap() {
   );
 
   app.useGlobalFilters(new ProblemDetailsFilter());
+
+  const configSwagger = new DocumentBuilder()
+    .setTitle('CampusRate API')
+    .setDescription(
+      "API REST permettant à la communauté étudiante de consulter des endroits du campus et de publier des appréciations.",
+    )
+    .setVersion('1.0')
+    .addTag('Places')
+    .addTag('Reviews')
+    .build();
+
+  const docSwagger = SwaggerModule.createDocument(app, configSwagger);
+  SwaggerModule.setup('api/docs', app, docSwagger);
 
   await app.listen(Number(portServeur));
 }
