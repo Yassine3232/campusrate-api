@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { DatabaseService } from '../database/database.service';
+import { StockageService } from '../stockage/stockage.service';
 import { PlacesService } from '../places/places.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
@@ -9,7 +9,7 @@ import { Place } from '../places/entities/place.entity';
 @Injectable()
 export class ReviewsService {
   constructor(
-    private readonly databaseService: DatabaseService,
+    private readonly stockageService: StockageService,
     private readonly placesService: PlacesService,
   ) {}
 
@@ -23,7 +23,7 @@ export class ReviewsService {
     placeId: string,
     dto: CreateReviewDto,
   ): Promise<Review> {
-    const donnees = await this.databaseService.lireDonnees();
+    const donnees = await this.stockageService.lireDonnees();
 
     let endroit: Place | null = null;
 
@@ -56,12 +56,12 @@ export class ReviewsService {
     this.placesService.recalculerStats(endroit, donnees.reviews);
     endroit.updatedAt = maintenant;
 
-    await this.databaseService.ecrireDonnees(donnees);
+    await this.stockageService.ecrireDonnees(donnees);
     return appreciation;
   }
 
   async trouverParEndroit(placeId: string): Promise<Review[]> {
-    const donnees = await this.databaseService.lireDonnees();
+    const donnees = await this.stockageService.lireDonnees();
 
     let endroitExiste = false;
 
@@ -90,7 +90,7 @@ export class ReviewsService {
   }
 
   async findOne(id: string): Promise<Review> {
-    const donnees = await this.databaseService.lireDonnees();
+    const donnees = await this.stockageService.lireDonnees();
 
     let appreciationTrouvee: Review | null = null;
 
@@ -111,7 +111,7 @@ export class ReviewsService {
   }
 
   async update(id: string, dto: UpdateReviewDto): Promise<Review> {
-    const donnees = await this.databaseService.lireDonnees();
+    const donnees = await this.stockageService.lireDonnees();
 
     let appreciationModifiee: Review | null = null;
 
@@ -157,12 +157,12 @@ export class ReviewsService {
       endroit.updatedAt = maintenant;
     }
 
-    await this.databaseService.ecrireDonnees(donnees);
+    await this.stockageService.ecrireDonnees(donnees);
     return appreciationModifiee;
   }
 
   async remove(id: string): Promise<void> {
-    const donnees = await this.databaseService.lireDonnees();
+    const donnees = await this.stockageService.lireDonnees();
 
     let indexAppreciation = -1;
 
@@ -205,6 +205,6 @@ export class ReviewsService {
       endroit.updatedAt = new Date().toISOString();
     }
 
-    await this.databaseService.ecrireDonnees(donnees);
+    await this.stockageService.ecrireDonnees(donnees);
   }
 }

@@ -105,7 +105,7 @@ Séparation des responsabilités :
 
 | Couche | Fichier | Rôle |
 | :--- | :--- | :--- |
-| Accès aux données | `src/database/database.service.ts` | Seul endroit qui lit et écrit le fichier JSON (`lireDonnees`, `ecrireDonnees`) |
+| Accès aux données | `src/stockage/stockage.service.ts` | Seul endroit qui lit et écrit le fichier JSON (`lireDonnees`, `ecrireDonnees`) |
 | Logique métier | `src/places/places.service.ts`, `src/reviews/reviews.service.ts` | Règles métier, cohérence des références et recalcul de `averageRating` et `reviewCount` |
 | Entrées HTTP | `src/places/places.controller.ts`, `src/reviews/reviews.controller.ts` | Routes, codes de statut et en-tête `Location` |
 | Validation | `src/places/dto/`, `src/reviews/dto/`, `src/common/dto/` | DTO de création, de modification et de paramètres de requête |

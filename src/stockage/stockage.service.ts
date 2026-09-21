@@ -9,7 +9,7 @@ import { Place } from '../places/entities/place.entity';
 import { Review } from '../reviews/entities/review.entity';
 
 @Injectable()
-export class DatabaseService implements OnModuleInit {
+export class StockageService implements OnModuleInit {
   private nomFichierData =
     process.env.DATA_FILE_PATH || './data/campusrate.json';
 

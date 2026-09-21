@@ -3,7 +3,7 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
-import { DatabaseService } from '../database/database.service';
+import { StockageService } from '../stockage/stockage.service';
 import { CreatePlaceDto } from './dto/create-place.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
 import { PaginationQueryDto } from '../common/dto/pagination.dto';
@@ -13,7 +13,7 @@ import { PlaceStatus } from '../common/enums/status.enum';
 
 @Injectable()
 export class PlacesService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(private readonly stockageService: StockageService) {}
 
   private genererId(): string {
     const temps = Date.now().toString();
@@ -47,7 +47,7 @@ export class PlacesService {
   }
 
   async create(dto: CreatePlaceDto): Promise<Place> {
-    const donnees = await this.databaseService.lireDonnees();
+    const donnees = await this.stockageService.lireDonnees();
     const maintenant = new Date().toISOString();
 
     let listeServices: string[] = [];
@@ -77,12 +77,12 @@ export class PlacesService {
     };
 
     donnees.places.push(endroit);
-    await this.databaseService.ecrireDonnees(donnees);
+    await this.stockageService.ecrireDonnees(donnees);
     return endroit;
   }
 
   async findAll(query: PaginationQueryDto) {
-    const donnees = await this.databaseService.lireDonnees();
+    const donnees = await this.stockageService.lireDonnees();
 
     let listeEndroits: Place[] = [];
 
@@ -122,7 +122,7 @@ export class PlacesService {
   }
 
   async findOne(id: string): Promise<Place> {
-    const donnees = await this.databaseService.lireDonnees();
+    const donnees = await this.stockageService.lireDonnees();
 
     let endroitTrouve: Place | null = null;
 
@@ -143,7 +143,7 @@ export class PlacesService {
   }
 
   async update(id: string, dto: UpdatePlaceDto): Promise<Place> {
-    const donnees = await this.databaseService.lireDonnees();
+    const donnees = await this.stockageService.lireDonnees();
 
     let endroitModifie: Place | null = null;
 
@@ -186,12 +186,12 @@ export class PlacesService {
 
     endroitModifie.updatedAt = new Date().toISOString();
 
-    await this.databaseService.ecrireDonnees(donnees);
+    await this.stockageService.ecrireDonnees(donnees);
     return endroitModifie;
   }
 
   async remove(id: string): Promise<void> {
-    const donnees = await this.databaseService.lireDonnees();
+    const donnees = await this.stockageService.lireDonnees();
 
     let indexEndroit = -1;
 
@@ -233,6 +233,6 @@ export class PlacesService {
 
     donnees.places = endroitsRestants;
 
-    await this.databaseService.ecrireDonnees(donnees);
+    await this.stockageService.ecrireDonnees(donnees);
   }
 }
