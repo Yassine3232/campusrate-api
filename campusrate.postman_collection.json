@@ -1,0 +1,484 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+    "name": "CampusRate API",
+    "description": "Collection de tests manuels pour l'API REST CampusRate (TP1). Dix scénarios couvrent la création et la consultation des deux concepts, une modification partielle, une suppression permise, une note invalide, une ressource inexistante, un conflit de suppression, le filtre, la pagination, une erreur Problem Details et la persistance après redémarrage.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "placeId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "reviewId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Créer un endroit (201 Created + Location)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "pm.test(\"Location header is present\", function () {",
+              "    pm.response.to.have.header(\"Location\");",
+              "});",
+              "var json = pm.response.json();",
+              "pm.collectionVariables.set(\"placeId\", json.id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Bibliothèque des sciences\",\n  \"description\": \"Espace d'étude silencieux avec bureaux individuels\",\n  \"category\": \"LIBRARY\",\n  \"address\": \"Pavillon B, local B-210\",\n  \"services\": [\"WIFI\", \"POWER_OUTLETS\"],\n  \"status\": \"ACTIVE\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/places",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "places"
+          ]
+        }
+      },
+      "description": "Créer un endroit valide : 201 Created, en-tête Location et variable placeId mémorisée."
+    },
+    {
+      "name": "02 - Consulter un endroit par ID (200 OK)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"averageRating is null initially\", function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.averageRating).to.be.null;",
+              "    pm.expect(json.reviewCount).to.eql(0);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/places/{{placeId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "places",
+            "{{placeId}}"
+          ]
+        }
+      },
+      "description": "Consulter l'endroit créé : 200 OK, averageRating à null et reviewCount à 0 tant qu'aucune appréciation n'existe."
+    },
+    {
+      "name": "03 - Note invalide > 5 (400 Bad Request + Problem Details)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 400\", function () {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "pm.test(\"Content-Type is problem+json\", function () {",
+              "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\");",
+              "});",
+              "pm.test(\"Problem details structure\", function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.type).to.eql(\"about:blank\");",
+              "    pm.expect(json.status).to.eql(400);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"authorName\": \"Samira\",\n  \"rating\": 6,\n  \"comment\": \"Très bien mais note trop haute\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/places/{{placeId}}/reviews",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "places",
+            "{{placeId}}",
+            "reviews"
+          ]
+        }
+      },
+      "description": "Publier une appréciation avec une note de 9 : 400 Bad Request au format application/problem+json."
+    },
+    {
+      "name": "04 - Publier une appréciation valide (201 Created + Location)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "pm.test(\"Location header is present\", function () {",
+              "    pm.response.to.have.header(\"Location\");",
+              "});",
+              "var json = pm.response.json();",
+              "pm.collectionVariables.set(\"reviewId\", json.id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"authorName\": \"Samira\",\n  \"rating\": 5,\n  \"comment\": \"Super endroit pour étudier en toute tranquillité.\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/places/{{placeId}}/reviews",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "places",
+            "{{placeId}}",
+            "reviews"
+          ]
+        }
+      },
+      "description": "Publier une appréciation valide : 201 Created, en-tête Location et variable reviewId mémorisée."
+    },
+    {
+      "name": "05 - Lister les appréciations de l'endroit (200 OK)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Response is an array\", function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(Array.isArray(json)).to.be.true;",
+              "    pm.expect(json.length).to.be.above(0);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/places/{{placeId}}/reviews",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "places",
+            "{{placeId}}",
+            "reviews"
+          ]
+        }
+      },
+      "description": "Lister les appréciations de l'endroit : 200 OK, tableau des appréciations de l'endroit."
+    },
+    {
+      "name": "06 - Modifier partiellement un endroit (200 OK)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Updated field changed\", function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.description).to.eql(\"Espace rénové avec prises rapides et tables individuelles\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"description\": \"Espace rénové avec prises rapides et tables individuelles\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/places/{{placeId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "places",
+            "{{placeId}}"
+          ]
+        }
+      },
+      "description": "Modifier partiellement l'endroit : 200 OK, seuls les champs envoyés sont modifiés et updatedAt est rafraîchi."
+    },
+    {
+      "name": "07 - Filtrer et paginer les endroits (200 OK)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Has data and pagination objects\", function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json).to.have.property(\"data\");",
+              "    pm.expect(json).to.have.property(\"pagination\");",
+              "    pm.expect(json.pagination.page).to.eql(1);",
+              "    pm.expect(json.pagination.limit).to.eql(10);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/places?category=LIBRARY&page=1&limit=10",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "places"
+          ],
+          "query": [
+            {
+              "key": "category",
+              "value": "LIBRARY"
+            },
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        }
+      },
+      "description": "Filtrer par catégorie et paginer : 200 OK, enveloppe data et pagination (page, limit, totalItems, totalPages)."
+    },
+    {
+      "name": "08 - Conflit suppression endroit avec avis (409 Conflict)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 409\", function () {",
+              "    pm.response.to.have.status(409);",
+              "});",
+              "pm.test(\"Content-Type is problem+json\", function () {",
+              "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/places/{{placeId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "places",
+            "{{placeId}}"
+          ]
+        }
+      },
+      "description": "Supprimer un endroit qui possède encore une appréciation : 409 Conflict au format Problem Details."
+    },
+    {
+      "name": "09 - Supprimer l'appréciation (204 No Content)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 204\", function () {",
+              "    pm.response.to.have.status(204);",
+              "});",
+              "pm.test(\"Body is empty\", function () {",
+              "    pm.expect(pm.response.text()).to.eql(\"\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/reviews/{{reviewId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "reviews",
+            "{{reviewId}}"
+          ]
+        }
+      },
+      "description": "Supprimer l'appréciation : 204 No Content avec un corps de réponse vide."
+    },
+    {
+      "name": "10 - Suppression permise, ressource inexistante et persistance après redémarrage",
+      "description": "Étape 10a : supprimer un endroit qui ne possède plus d'appréciation, réponse 204 No Content avec un corps vide. Étape 10b : la ressource est maintenant inexistante, réponse 404 Not Found au format application/problem+json. Persistance : redémarrer le serveur (Ctrl+C puis npm run start) et relancer la requête 07 ; les endroits conservés doivent toujours être présents dans le fichier DATA_FILE_PATH.",
+      "item": [
+        {
+          "name": "10a - Suppression permise de l'endroit (204 No Content)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 204\", function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "pm.test(\"Body is empty\", function () {",
+                  "    pm.expect(pm.response.text()).to.eql(\"\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/places/{{placeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "places",
+                "{{placeId}}"
+              ]
+            }
+          },
+          "description": "Suppression acceptée parce que l'endroit ne possède plus d'appréciation."
+        },
+        {
+          "name": "10b - Ressource inexistante (404 Not Found + Problem Details)",
+          "description": "Même URI que 10a après suppression : 404 Not Found avec les cinq champs Problem Details.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"Content-Type is problem+json\", function () {",
+                  "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\");",
+                  "});",
+                  "pm.test(\"Problem Details fields are present\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property(\"type\");",
+                  "    pm.expect(json).to.have.property(\"title\");",
+                  "    pm.expect(json).to.have.property(\"status\");",
+                  "    pm.expect(json).to.have.property(\"detail\");",
+                  "    pm.expect(json).to.have.property(\"instance\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/places/{{placeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "places",
+                "{{placeId}}"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
