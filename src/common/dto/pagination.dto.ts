@@ -7,20 +7,23 @@ export class PaginationQueryDto {
   @ApiPropertyOptional({ enum: PlaceCategory, description: 'Filtre exact par catégorie' })
   @IsOptional()
   @IsEnum(PlaceCategory)
+
   category?: PlaceCategory;
 
-  @ApiPropertyOptional({ default: 1, minimum: 1, description: 'Numéro de page' })
+  @ApiPropertyOptional({ example: 1, description: 'Page demandée' })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
+
   page: number = 1;
 
-  @ApiPropertyOptional({ default: 10, minimum: 1, maximum: 50, description: 'Nombre d\'éléments par page (max 50)' })
+  @ApiPropertyOptional({ example: 10, description: 'Taille de page, maximum 50' })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(50)
+
   limit: number = 10;
 }

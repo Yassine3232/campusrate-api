@@ -32,17 +32,10 @@ export class ReviewsController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Publier une appréciation pour un endroit' })
   @ApiParam({ name: 'placeId', example: 'plc_01JABC123' })
-  @ApiResponse({ status: 201, description: 'Appréciation créée avec succès', type: Review })
-  @ApiResponse({
-    status: 400,
-    description: 'Données invalides ou attributs non autorisés',
-    type: ProblemDetailsDto,
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Endroit introuvable',
-    type: ProblemDetailsDto,
-  })
+  @ApiResponse({ status: 201, description: 'Appréciation créée', type: Review })
+  @ApiResponse({ status: 400, description: 'Données invalides', type: ProblemDetailsDto })
+  @ApiResponse({ status: 404, description: 'Endroit introuvable', type: ProblemDetailsDto })
+
   async create(
     @Param('placeId') placeId: string,
     @Body() createReviewDto: CreateReviewDto,
@@ -57,27 +50,21 @@ export class ReviewsController {
   }
 
   @Get('places/:placeId/reviews')
-  @ApiOperation({ summary: 'Lister les appréciations associées à un endroit' })
+  @ApiOperation({ summary: 'Lister les appréciations d un endroit' })
   @ApiParam({ name: 'placeId', example: 'plc_01JABC123' })
-  @ApiResponse({ status: 200, description: 'Liste des appréciations de l\'endroit', type: [Review] })
-  @ApiResponse({
-    status: 404,
-    description: 'Endroit introuvable',
-    type: ProblemDetailsDto,
-  })
+  @ApiResponse({ status: 200, description: 'Appréciations de l endroit', type: [Review] })
+  @ApiResponse({ status: 404, description: 'Endroit introuvable', type: ProblemDetailsDto })
+
   findByPlace(@Param('placeId') placeId: string): Promise<Review[]> {
     return this.reviewsService.trouverParEndroit(placeId);
   }
 
   @Get('reviews/:id')
-  @ApiOperation({ summary: 'Consulter une appréciation par son identifiant' })
+  @ApiOperation({ summary: 'Consulter une appréciation' })
   @ApiParam({ name: 'id', example: 'rev_01JXYZ789' })
   @ApiResponse({ status: 200, description: 'Appréciation trouvée', type: Review })
-  @ApiResponse({
-    status: 404,
-    description: 'Appréciation introuvable',
-    type: ProblemDetailsDto,
-  })
+  @ApiResponse({ status: 404, description: 'Appréciation introuvable', type: ProblemDetailsDto })
+
   findOne(@Param('id') id: string): Promise<Review> {
     return this.reviewsService.findOne(id);
   }
@@ -86,16 +73,9 @@ export class ReviewsController {
   @ApiOperation({ summary: 'Modifier partiellement une appréciation' })
   @ApiParam({ name: 'id', example: 'rev_01JXYZ789' })
   @ApiResponse({ status: 200, description: 'Appréciation modifiée', type: Review })
-  @ApiResponse({
-    status: 400,
-    description: 'Données invalides',
-    type: ProblemDetailsDto,
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Appréciation introuvable',
-    type: ProblemDetailsDto,
-  })
+  @ApiResponse({ status: 400, description: 'Données invalides', type: ProblemDetailsDto })
+  @ApiResponse({ status: 404, description: 'Appréciation introuvable', type: ProblemDetailsDto })
+
   update(
     @Param('id') id: string,
     @Body() updateReviewDto: UpdateReviewDto,
@@ -107,12 +87,9 @@ export class ReviewsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Supprimer une appréciation' })
   @ApiParam({ name: 'id', example: 'rev_01JXYZ789' })
-  @ApiResponse({ status: 204, description: 'Appréciation supprimée avec succès' })
-  @ApiResponse({
-    status: 404,
-    description: 'Appréciation introuvable',
-    type: ProblemDetailsDto,
-  })
+  @ApiResponse({ status: 204, description: 'Appréciation supprimée' })
+  @ApiResponse({ status: 404, description: 'Appréciation introuvable', type: ProblemDetailsDto })
+
   remove(@Param('id') id: string): Promise<void> {
     return this.reviewsService.remove(id);
   }
