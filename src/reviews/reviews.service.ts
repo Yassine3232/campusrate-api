@@ -16,9 +16,10 @@ export class ReviewsService {
   private genererId(): string {
     const temps = Date.now().toString();
     const hasard = Math.floor(Math.random() * 10000).toString();
-    return 'rev_' + temps + hasard;
+    return 'rev_' + temps + hasard; // colle rev_ devant le temps et un nombre pour faire un id unique
   }
 
+  // ajouter un nouvel avis pour un endroit et mettre a jour les statistiques
   async creerPourEndroit(
     placeId: string,
     dto: CreateReviewDto,
@@ -60,6 +61,7 @@ export class ReviewsService {
     return appreciation;
   }
 
+  // lister tous les avis associes a un endroit
   async trouverParEndroit(placeId: string): Promise<Review[]> {
     const donnees = await this.stockageService.lireDonnees();
 
@@ -89,6 +91,7 @@ export class ReviewsService {
     return listeAppreciations;
   }
 
+  // rechercher un avis par son identifiant
   async findOne(id: string): Promise<Review> {
     const donnees = await this.stockageService.lireDonnees();
 
@@ -110,6 +113,7 @@ export class ReviewsService {
     return appreciationTrouvee;
   }
 
+  // modifier les informations d un avis existant
   async update(id: string, dto: UpdateReviewDto): Promise<Review> {
     const donnees = await this.stockageService.lireDonnees();
 
@@ -161,6 +165,7 @@ export class ReviewsService {
     return appreciationModifiee;
   }
 
+  // supprimer un avis et mettre a jour les statistiques du place concerne
   async remove(id: string): Promise<void> {
     const donnees = await this.stockageService.lireDonnees();
 
@@ -208,3 +213,7 @@ export class ReviewsService {
     await this.stockageService.ecrireDonnees(donnees);
   }
 }
+
+
+
+

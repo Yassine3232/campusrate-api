@@ -15,12 +15,14 @@ import { PlaceStatus } from '../common/enums/status.enum';
 export class PlacesService {
   constructor(private readonly stockageService: StockageService) {}
 
+  // generer un identifiant court unique pour un nouveau place
   private genererId(): string {
     const temps = Date.now().toString();
     const hasard = Math.floor(Math.random() * 10000).toString();
-    return 'plc_' + temps + hasard;
+    return 'plc_' + temps + hasard; // colle plc_ devant le temps et un nombre pour faire un id unique
   }
 
+  // recalculer la note moyenne et le nombre davis d un place
   recalculerStats(endroit: Place, reviews: Review[]) {
     const listeNotes: Review[] = [];
 
@@ -46,6 +48,7 @@ export class PlacesService {
     }
   }
 
+  // ajouter un nouveau place au fichier de donnees
   async create(dto: CreatePlaceDto): Promise<Place> {
     const donnees = await this.stockageService.lireDonnees();
     const maintenant = new Date().toISOString();
@@ -81,6 +84,7 @@ export class PlacesService {
     return endroit;
   }
 
+  // lister tous les endroits avec filtrage et pagination
   async findAll(query: PaginationQueryDto) {
     const donnees = await this.stockageService.lireDonnees();
 
@@ -121,6 +125,7 @@ export class PlacesService {
     };
   }
 
+  // rechercher un endroit par son identifiant
   async findOne(id: string): Promise<Place> {
     const donnees = await this.stockageService.lireDonnees();
 
@@ -142,6 +147,7 @@ export class PlacesService {
     return endroitTrouve;
   }
 
+  // modifier les informations d un endroit existant
   async update(id: string, dto: UpdatePlaceDto): Promise<Place> {
     const donnees = await this.stockageService.lireDonnees();
 
@@ -190,6 +196,7 @@ export class PlacesService {
     return endroitModifie;
   }
 
+  // supprimer un place si aucune appreciation ne lui est liee
   async remove(id: string): Promise<void> {
     const donnees = await this.stockageService.lireDonnees();
 
@@ -236,3 +243,10 @@ export class PlacesService {
     await this.stockageService.ecrireDonnees(donnees);
   }
 }
+
+
+
+
+
+
+

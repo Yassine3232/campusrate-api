@@ -1,3 +1,4 @@
+﻿// dto pour creer un avis
 import {
   IsInt,
   IsNotEmpty,
@@ -10,26 +11,23 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateReviewDto {
-  @ApiProperty({ example: 'Samira', minLength: 2, maxLength: 50 })
+  @ApiProperty({ example: 'Samira' })
   @IsString()
   @IsNotEmpty()
   @MinLength(2)
   @MaxLength(50)
-
   authorName: string;
 
-  @ApiProperty({ example: 4, minimum: 1, maximum: 5 })
+  @ApiProperty({ example: 4 })
   @IsInt()
   @Min(1)
   @Max(5)
-
   rating: number;
 
-  @ApiProperty({ example: 'Calme et Wi-Fi stable.', minLength: 3, maxLength: 500 })
+  @ApiProperty({ example: 'Calme et Wi-Fi stable.' })
   @IsString()
   @IsNotEmpty()
   @MinLength(3)
   @MaxLength(500)
-
   comment: string;
 }

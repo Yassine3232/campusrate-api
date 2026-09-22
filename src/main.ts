@@ -1,3 +1,4 @@
+// demmarage nest
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
@@ -7,18 +8,14 @@ import { ProblemDetailsFilter } from './common/filters/problem-details.filter';
 
 async function bootstrap() {
   const portServeur = process.env.PORT;
-  const cheminFichierData = process.env.DATA_FILE_PATH;
+  const fichierData = process.env.DATA_FILE_PATH;
 
-  if (!portServeur || isNaN(Number(portServeur))) {
-    throw new Error(
-      "La variable d'environnement PORT est obligatoire et doit être un nombre valide.",
-    );
+  if (!portServeur) {
+    throw new Error('Le port est manquant');
   }
 
-  if (!cheminFichierData || cheminFichierData.trim() === '') {
-    throw new Error(
-      "La variable d'environnement DATA_FILE_PATH est obligatoire.",
-    );
+  if (!fichierData) {
+    throw new Error('Le fichier data est manquant');
   }
 
   const app = await NestFactory.create(AppModule);
@@ -29,30 +26,21 @@ async function bootstrap() {
     defaultVersion: '1',
   });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
-
+  app.useGlobalPipes(new ValidationPipe());
   app.useGlobalFilters(new ProblemDetailsFilter());
 
-  const configSwagger = new DocumentBuilder()
-    .setTitle('CampusRate API')
-    .setDescription(
-      "API REST permettant à la communauté étudiante de consulter des endroits du campus et de publier des appréciations.",
-    )
+  // swagger pour tester l api
+  const config = new DocumentBuilder()
+    .setTitle('API CampusRate')
+    .setDescription('Api pour noter des lieux')
     .setVersion('1.0')
-    .addTag('Places')
-    .addTag('Reviews')
     .build();
 
-  const docSwagger = SwaggerModule.createDocument(app, configSwagger);
-  SwaggerModule.setup('api/docs', app, docSwagger);
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
 
   await app.listen(Number(portServeur));
 }
 
 bootstrap();
+

@@ -1,3 +1,4 @@
+﻿// controleur reviews
 import {
   Controller,
   Get,
@@ -15,12 +16,10 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiParam,
 } from '@nestjs/swagger';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
-import { ProblemDetailsDto } from '../common/dto/problem-details.dto';
 import { Review } from './entities/review.entity';
 
 @ApiTags('Reviews')
@@ -28,19 +27,16 @@ import { Review } from './entities/review.entity';
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
+  // cree un avis pour un endroit
   @Post('places/:placeId/reviews')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Publier une appréciation pour un endroit' })
-  @ApiParam({ name: 'placeId', example: 'plc_01JABC123' })
-  @ApiResponse({ status: 201, description: 'Appréciation créée', type: Review })
-  @ApiResponse({ status: 400, description: 'Données invalides', type: ProblemDetailsDto })
-  @ApiResponse({ status: 404, description: 'Endroit introuvable', type: ProblemDetailsDto })
-
+  @ApiOperation({ summary: 'Publier une appreciation' })
+  @ApiResponse({ status: 201, description: 'Avis cree', type: Review })
   async create(
     @Param('placeId') placeId: string,
     @Body() createReviewDto: CreateReviewDto,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<Review> {
+    @Res({ passthrough: true }) res: Response, // pour mettre le header location sans casser le retour auto
+  ) {
     const appreciation = await this.reviewsService.creerPourEndroit(
       placeId,
       createReviewDto,
@@ -49,33 +45,23 @@ export class ReviewsController {
     return appreciation;
   }
 
+  // liste les avis d un endroit
   @Get('places/:placeId/reviews')
-  @ApiOperation({ summary: 'Lister les appréciations d un endroit' })
-  @ApiParam({ name: 'placeId', example: 'plc_01JABC123' })
-  @ApiResponse({ status: 200, description: 'Appréciations de l endroit', type: [Review] })
-  @ApiResponse({ status: 404, description: 'Endroit introuvable', type: ProblemDetailsDto })
-
-  findByPlace(@Param('placeId') placeId: string): Promise<Review[]> {
+  @ApiOperation({ summary: 'Lister les avis' })
+  findyPlace(@Param('placeId') placeId: string): Promise<Review[]> {
     return this.reviewsService.trouverParEndroit(placeId);
   }
 
+  // trouve un avis par id
   @Get('reviews/:id')
-  @ApiOperation({ summary: 'Consulter une appréciation' })
-  @ApiParam({ name: 'id', example: 'rev_01JXYZ789' })
-  @ApiResponse({ status: 200, description: 'Appréciation trouvée', type: Review })
-  @ApiResponse({ status: 404, description: 'Appréciation introuvable', type: ProblemDetailsDto })
-
+  @ApiOperation({ summary: 'Consulter un avis' })
   findOne(@Param('id') id: string): Promise<Review> {
     return this.reviewsService.findOne(id);
   }
 
+  // modifie un avis
   @Patch('reviews/:id')
-  @ApiOperation({ summary: 'Modifier partiellement une appréciation' })
-  @ApiParam({ name: 'id', example: 'rev_01JXYZ789' })
-  @ApiResponse({ status: 200, description: 'Appréciation modifiée', type: Review })
-  @ApiResponse({ status: 400, description: 'Données invalides', type: ProblemDetailsDto })
-  @ApiResponse({ status: 404, description: 'Appréciation introuvable', type: ProblemDetailsDto })
-
+  @ApiOperation({ summary: 'Modifier un avis' })
   update(
     @Param('id') id: string,
     @Body() updateReviewDto: UpdateReviewDto,
@@ -83,13 +69,10 @@ export class ReviewsController {
     return this.reviewsService.update(id, updateReviewDto);
   }
 
+  // supprime un avis
   @Delete('reviews/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Supprimer une appréciation' })
-  @ApiParam({ name: 'id', example: 'rev_01JXYZ789' })
-  @ApiResponse({ status: 204, description: 'Appréciation supprimée' })
-  @ApiResponse({ status: 404, description: 'Appréciation introuvable', type: ProblemDetailsDto })
-
+  @ApiOperation({ summary: 'Supprimer un avis' })
   remove(@Param('id') id: string): Promise<void> {
     return this.reviewsService.remove(id);
   }
