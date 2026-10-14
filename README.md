@@ -1,154 +1,93 @@
-# CampusRate API — TP2
+# CampusRate API
 
-API REST permettant à la communauté étudiante de consulter des endroits et services du campus et de publier des appréciations accompagnées d'une note.
-Cette version (TP2) fait évoluer l'architecture initiale vers une persistance robuste avec **MongoDB**, des schémas **Mongoose**, une validation stricte des entrées et une sécurisation renforcée (Helmet, CORS, limitation de débit, limitation de corps, journalisation).
+Une API REST simple développée avec NestJS pour noter et consulter des endroits du campus (bibliothèques, cafétérias, espaces d'étude).
 
----
-
-## Objectif
-
-CampusRate offre une plateforme centralisée pour répertorier les espaces du campus (bibliothèques, laboratoires informatiques, espaces d'étude, cafétérias, etc.) et recueillir les avis des étudiants avec calcul automatique des moyennes de satisfaction.
+Ce projet a été initialisé au **TP1** (gestion de base en mémoire / fichier) et a été mis à niveau pour le **TP2** avec une base de données **MongoDB** et des mesures de sécurité.
 
 ---
 
-## Fonctionnalités principales (TP2)
+## Ce qui a été ajouté dans le TP2
 
-- **Persistance NoSQL avec MongoDB & Mongoose** : remplacement intégral du stockage fichier par deux collections MongoDB (`places` et `reviews`).
-- **Gestion des endroits (`places`)** : création, consultation détaillée, modification partielle, suppression contrôlée.
-- **Gestion des appréciations (`reviews`)** : publication liée à un endroit parent, consultation unitaire et par endroit, mise à jour, suppression.
-- **Agrégation MongoDB ($group)** : calcul dynamique et immédiat de la note moyenne (`averageRating`) et du nombre d'avis (`reviewCount`) sans intervention du client.
-- **Validation globale stricte** : rejet immédiat des requêtes contenant des champs inconnus ou non autorisés (`whitelist: true, forbidNonWhitelisted: true`).
-- **Protection des données gérées par le serveur** : impossibilité d'injecter ou de modifier `averageRating`, `reviewCount`, `createdAt` ou `updatedAt`.
-- **Format d'erreurs standardisé** : gestion centralisée au standard RFC 9457 Problem Details (`application/problem+json`).
-- **Sécurisation HTTP** : en-têtes sécurisés avec Helmet, restriction CORS configurable par environnement.
+1. **Base de données MongoDB avec Mongoose** :
+   - Les données ne sont plus stockées dans un fichier ou en mémoire, elles sont maintenant sauvegardées dans MongoDB.
+   - Création de deux collections : `places` (les endroits) et `reviews` (les avis).
+   - Les schémas Mongoose utilisent `timestamps: true` pour gérer automatiquement les dates d'ajout et de modification.
 
----
+2. **Sécurité et validation** :
+   - **Validation globale** : utilisation de `ValidationPipe` avec `whitelist: true` et `forbidNonWhitelisted: true`. Si quelqu'un envoie un champ non prévu, la requête est directement rejetée avec une erreur 400.
+   - **Helmet** : configuration des en-têtes HTTP sécurisés.
+   - **CORS** : seules les adresses autorisées dans le `.env` peuvent faire des requêtes.
 
-## Technologies
+3. **Gestion des erreurs (RFC 9457)** :
+   - Mise en place d'un filtre global `ProblemDetailsFilter` qui retourne des erreurs claires au format `application/problem+json`.
+   - Si un nom d'endroit existe déjà, l'erreur MongoDB (code 11000) est interceptée et retourne un code `409 Conflict`.
 
-- **NestJS** (v12) avec Node.js & TypeScript
-- **MongoDB** & **Mongoose** (`@nestjs/mongoose`, `mongoose`)
-- **Validation & Transformation** : `class-validator`, `class-transformer`, `joi`
-- **Sécurité** : `helmet`, CORS
-- **Documentation** : Swagger / OpenAPI (`@nestjs/swagger`)
-- **Tests & Démonstration** : Postman (`campusrate.postman_collection.json`)
+4. **Calcul automatique des moyennes ($group)** :
+   - Quand on ajoute ou supprime un avis, l'API recalcule toute seule la note moyenne et le nombre d'avis de l'endroit avec une requête d'agrégation MongoDB `$group`.
 
 ---
 
-## Installation et configuration
+## Prérequis pour faire tourner le projet
 
-### Prérequis
-
-- Node.js (v20+ ou v24+)
-- npm (v10+ ou v11+)
-- Une instance **MongoDB** active (locale sur `mongodb://127.0.0.1:27017` ou distante via MongoDB Atlas)
-
-### Installation des dépendances
-
-```bash
-npm ci
-```
-
-### Configuration des variables d'environnement
-
-Copier le fichier d'exemple :
-
-```bash
-cp .env.example .env
-```
-
-Variables requises dans `.env` :
-
-| Variable | Description | Exemple |
-| :--- | :--- | :--- |
-| `PORT` | Port d'écoute du serveur HTTP | `3000` |
-| `MONGO_URI` | URI de connexion MongoDB (avec base de données explicite) | `mongodb://127.0.0.1:27017/campusrate-dev` |
-| `CORS_ORIGINS` | Origines autorisées par CORS (séparées par une virgule) | `http://localhost:5173` |
-| `THROTTLE_TTL` | Fenêtre temporelle du rate limiter en millisecondes (défaut : 60000) | `60000` |
-| `THROTTLE_LIMIT` | Nombre maximal de requêtes autorisées par fenêtre (défaut : 100) | `100` |
-
-> **Validation au démarrage** : L'application utilise `Joi` pour valider la configuration au démarrage. Si `MONGO_URI` est absent ou invalide, l'application refuse de démarrer avec un message d'erreur explicite.
+- **Node.js** (version 20 ou plus récente)
+- **MongoDB** en marche (localement sur le port 27017, ou via Docker avec `docker run -d -p 27017:27017 mongo`)
 
 ---
 
-## Démarrage, lint et compilation
+## Installation et démarrage
 
-```bash
-# Mode développement avec rechargement à chaud
-npm run start:dev
+1. Installer les dépendances :
+   ```bash
+   npm install
+   ```
 
-# Mode production
-npm run start:prod
+2. Créer le fichier de configuration `.env` à partir de l'exemple :
+   ```bash
+   cp .env.example .env
+   ```
 
-# Analyse de code (linter oxlint)
-npm run lint
+   Vérifiez que votre fichier `.env` contient :
+   ```text
+   PORT=3000
+   MONGO_URI=mongodb://127.0.0.1:27017/campusrate-dev
+   CORS_ORIGINS=http://localhost:5173
+   ```
 
-# Compilation TypeScript
-npm run build
-```
+3. Lancer l'API en mode développement :
+   ```bash
+   npm run start:dev
+   ```
+
+4. Vérifier la qualité du code :
+   ```bash
+   npm run lint
+   npm run build
+   ```
 
 ---
 
-## Documentation Swagger / OpenAPI
+## Documentation et tests
 
-Lorsque le serveur est démarré, la documentation interactive Swagger est accessible à :
-👉 **`http://localhost:3000/api/docs`**
+- **Swagger (interface de test dans le navigateur)** :  
+  Quand l'API est lancée, ouvrez [http://localhost:3000/api/docs](http://localhost:3000/api/docs).
 
-Elle présente :
-- Toutes les routes versionnées sous `/api/v1/...`
-- Les schémas des DTOs avec leurs contraintes et exemples
-- Les codes de statut HTTP documentés (200, 201, 204, 400, 404, 409, 413, 415)
-- Les structures d'erreur `application/problem+json`
+- **Postman** :  
+  La collection avec tous les scénarios de test est disponible dans le fichier `campusrate.postman_collection.json` (et `campusrate.postman_collection.yaml`).  
+  Le fichier `DEMO_SCRIPT.md` explique l'ordre des requêtes pour la vidéo de démonstration.
 
 ---
 
-## Architecture des données MongoDB
+## Choix techniques du TP2 (Explications simples)
 
-### 1. Justification Référence vs Imbrication (Option M3)
-Nous avons choisi un modèle à **deux collections distinctes avec référence** (`places` et `reviews`), où chaque document `review` stocke l'identifiant `placeId` de son endroit parent :
-- **Cycle de vie indépendant** : Les avis possèdent leur propre cycle de vie (consultation unitaire, modification, suppression indépendante sans charger l'endroit parent).
-- **Volume et croissance non bornée** : Un endroit très fréquenté peut accumuler des centaines ou milliers d'avis au fil des sessions. L'imbrication dans un sous-document de `Place` risquerait d'atteindre la limite BSON de 16 Mo par document.
-- **Performance des requêtes** : Permet de requêter la liste des endroits sans rapatrier inutilement l'intégralité du texte de tous les avis associés.
+### 1. Pourquoi deux collections séparées plutôt qu'imbriquées ? (Option M3)
+Nous avons choisi de mettre les endroits dans `places` et les avis dans `reviews` (avec un lien `placeId`) :
+- Si un endroit devient très populaire, il peut recevoir des centaines d'avis. Si on mettait tous les avis à l'intérieur de l'endroit, le document deviendrait trop lourd (MongoDB limite la taille d'un document à 16 Mo).
+- Ça permet aussi de supprimer ou modifier un avis directement sans devoir charger tout l'endroit.
 
-### 2. Index et justifications (Option M1)
-- **Index unique sur `places.name`** (`{ name: 1 }, { unique: true }`) :
-  - *Justification* : Garantit au niveau de la base de données qu'aucun doublon d'endroit n'est créé avec le même libellé.
-  - *Traduction d'erreur* : En cas de doublon, le pilote MongoDB émet l'erreur `11000`, automatiquement interceptée et traduite en HTTP `409 Conflict` au format Problem Details.
-- **Index de recherche sur `reviews.placeId`** (`{ placeId: 1 }`) :
-  - *Justification* : Optimise les opérations fréquentes de filtrage (`GET /places/:placeId/reviews`), de comptage et d'agrégation des statistiques par endroit sans balayage complet de collection (*COLLSCAN* évité).
+### 2. Pourquoi un index unique sur le nom ? (Option M1)
+- Deux endroits ne doivent pas avoir le même nom sur le campus.
+- Pour être sûr à 100% qu'aucun doublon n'est créé, on a mis `@Prop({ required: true, unique: true }) name: string` dans le schéma. MongoDB bloque les doublons et notre filtre transforme l'erreur en `409 Conflict`.
 
 ### 3. Stratégie de suppression
-- **Refus de suppression avec conflit (409 Conflict)** : Si un client tente de supprimer un endroit qui possède encore des avis (`reviewCount > 0`), l'API refuse l'opération et renvoie un `409 Conflict`.
-- *Justification* : Cette stratégie empêche formellement l'apparition d'avis orphelins dans la base de données, préservant l'intégrité référentielle des données.
-
-### 4. Migration des identifiants (TP1 vers TP2)
-- Dans le TP1, les identifiants étaient générés manuellement sous forme de chaînes préfixées (ex. `plc_179...`).
-- Dans le TP2, MongoDB génère des `_id` de type `ObjectId`. Grâce à la transformation `toJSON` configurée au niveau des schémas Mongoose, l'identifiant interne est projeté sous la propriété `id` sous forme de chaîne hexadécimale, tandis que `_id` et `__v` sont masqués.
-
----
-
-## Options TP2 implémentées
-
-| Code | Option | Points | Description technique |
-| :--- | :--- | :---: | :--- |
-| **M1** | Index pertinents + index unique + gestion 409 | 6 pts | Index unique sur `name` (erreur 11000 → 409 Conflict) et index sur `reviews.placeId`. |
-| **M2** | Agrégation MongoDB `$group` | 4 pts | Pipeline d'agrégation MongoDB (`calculateStats`) recalculant la note moyenne et le nombre d'avis sans exposer de pipeline client. |
-| **M3** | Justification référence vs imbrication | 2 pts | Documentation complète de l'architecture découplée en deux collections dans le README. |
-| **P1** | Allowlist explicite des filtres | 2 pts | Filtrage des endroits restreint au seul paramètre `category` via `PaginationQueryDto`. |
-| **P2** | Propriétés modifiables explicitement sélectionnées | 2 pts | `UpdatePlaceDto` et `UpdateReviewDto` restreignent strictement les champs modifiables. |
-| **H4** | Restriction CORS par environnement | 2 pts | Origines CORS restreintes via la variable `CORS_ORIGINS` dans `.env`. |
-| **H5** | Restriction explicite des méthodes HTTP permises | 1 pt | Déclaration explicite des verbes autorisés (`GET`, `POST`, `PATCH`, `DELETE`, `OPTIONS`) dans CORS. |
-
----
-
-## Démonstration et tests (Phase 9)
-
-Une collection Postman prête à l'emploi est incluse à la racine : `campusrate.postman_collection.json`.
-Le fichier `DEMO_SCRIPT.md` détaille la séquence des 8 scénarios obligatoires à présenter pour la vidéo de démonstration.
-
----
-
-## Limites connues
-
-- **Authentification & rôles** : Cette version n'intègre pas de gestion d'utilisateurs authentifiés par jeton JWT (fonctionnalité reportée aux travaux ultérieurs).
-- **Disponibilité MongoDB** : L'API dépend d'un serveur MongoDB accessible dès l'amorçage ; elle refuse de se déclarer prête en cas de panne de la base de données.
+- Si on essaie de supprimer un endroit qui a déjà des avis, l'API refuse avec un code `409 Conflict`.
+- On doit d'abord supprimer les avis pour pouvoir supprimer l'endroit. Cela évite d'avoir des avis "orphelins" qui pointent vers un endroit qui n'existe plus.
