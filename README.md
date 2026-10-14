@@ -1,132 +1,160 @@
-# CampusRate API
+# CampusRate API — TP2
 
 API REST permettant à la communauté étudiante de consulter des endroits et services du campus et de publier des appréciations accompagnées d'une note.
+Cette version (TP2) fait évoluer l'architecture initiale vers une persistance robuste avec **MongoDB**, des schémas **Mongoose**, une validation stricte des entrées et une sécurisation renforcée (Helmet, CORS, limitation de débit, limitation de corps, journalisation).
+
+---
 
 ## Objectif
 
 CampusRate offre une plateforme centralisée pour répertorier les espaces du campus (bibliothèques, laboratoires informatiques, espaces d'étude, cafétérias, etc.) et recueillir les avis des étudiants avec calcul automatique des moyennes de satisfaction.
 
-## Fonctionnalités
+---
 
-- Gestion complète des endroits (`places`) : création, consultation détaillée, modification partielle, suppression contrôlée.
-- Filtrage par catégorie et pagination avec plafond strict.
-- Gestion des appréciations (`reviews`) : publication liée à un endroit, consultation unitaire et par endroit, mise à jour, suppression.
-- Recalcul automatique et immédiat de la note moyenne (`averageRating`) et du nombre d'avis (`reviewCount`).
-- Rejet strict des propriétés système non autorisées à la création et modification.
-- Gestion uniforme des erreurs au standard RFC 9457 Problem Details (`application/problem+json`).
-- Persistance locale asynchrone dans un fichier JSON via `node:fs/promises`.
+## Fonctionnalités principales (TP2)
+
+- **Persistance NoSQL avec MongoDB & Mongoose** : remplacement intégral du fichier JSON par deux collections MongoDB (`places` et `reviews`).
+- **Gestion des endroits (`places`)** : création, consultation détaillée, modification partielle, suppression contrôlée.
+- **Gestion des appréciations (`reviews`)** : publication liée à un endroit parent, consultation unitaire et par endroit, mise à jour, suppression.
+- **Agrégation MongoDB ($group)** : calcul dynamique et immédiat de la note moyenne (`averageRating`) et du nombre d'avis (`reviewCount`) sans intervention du client.
+- **Validation globale stricte** : rejet immédiat des requêtes contenant des champs inconnus ou non autorisés (`whitelist: true, forbidNonWhitelisted: true`).
+- **Protection des données gérées par le serveur** : impossibilité d'injecter ou de modifier `id`, `averageRating`, `reviewCount`, `createdAt` ou `updatedAt`.
+- **Format d'erreurs standardisé** : gestion centralisée au standard RFC 9457 Problem Details (`application/problem+json`).
+- **Sécurisation HTTP** : en-têtes sécurisés avec Helmet, restriction CORS configurable, limitation de débit (Throttler), limitation de la taille du corps (100 kb), vérification du Content-Type.
+- **Journalisation structurée** : logs HTTP de niveau INFO (méthode, chemin, statut, durée) et journalisation distincte de niveau ERROR sans fuite de données sensibles.
+
+---
 
 ## Technologies
 
-- NestJS (Node.js & TypeScript)
-- Express
-- Swagger / OpenAPI (`@nestjs/swagger`)
-- class-validator & class-transformer
-- Postman
+- **NestJS** (v12) avec Node.js & TypeScript
+- **MongoDB** & **Mongoose** (`@nestjs/mongoose`, `mongoose`)
+- **Validation & Transformation** : `class-validator`, `class-transformer`, `joi`
+- **Sécurité** : `helmet`, `@nestjs/throttler`
+- **Documentation** : Swagger / OpenAPI (`@nestjs/swagger`)
+- **Tests & Démonstration** : Postman (`campusrate.postman_collection.json`)
+
+---
 
 ## Installation et configuration
 
 ### Prérequis
 
 - Node.js (v20+ ou v24+)
-- npm
+- npm (v10+ ou v11+)
+- Une instance **MongoDB** active (locale sur `mongodb://127.0.0.1:27017` ou distante via MongoDB Atlas)
 
-### Installation
+### Installation des dépendances
 
 ```bash
-npm install
+npm ci
 ```
 
-### Configuration
+### Configuration des variables d'environnement
 
-Copier le fichier d'exemple des variables d'environnement :
+Copier le fichier d'exemple :
 
 ```bash
 cp .env.example .env
 ```
 
-Variables requises :
-- `PORT` : Port d'écoute du serveur HTTP (ex. `3000`).
-- `DATA_FILE_PATH` : Chemin vers le fichier JSON de persistance locale (ex. `./data/campusrate.json`).
+Variables requises dans `.env` :
 
-L'application valide la présence de ces variables au démarrage et refuse de démarrer si l'une d'elles est absente ou invalide.
+| Variable | Description | Exemple |
+| :--- | :--- | :--- |
+| `PORT` | Port d'écoute du serveur HTTP | `3000` |
+| `MONGO_URI` | URI de connexion MongoDB (avec base de données explicite) | `mongodb://127.0.0.1:27017/campusrate-dev` |
+| `CORS_ORIGINS` | Origines autorisées par CORS (séparées par une virgule) | `http://localhost:5173` |
+| `THROTTLE_TTL` | Fenêtre temporelle du rate limiter en millisecondes (défaut : 60000) | `60000` |
+| `THROTTLE_LIMIT` | Nombre maximal de requêtes autorisées par fenêtre (défaut : 100) | `100` |
+
+> **Validation au démarrage** : L'application utilise `Joi` pour valider la configuration au démarrage. Si `MONGO_URI` est absent ou invalide, l'application refuse de démarrer avec un message d'erreur explicite.
+
+---
 
 ## Démarrage, lint et compilation
 
-### Démarrage
-
 ```bash
-# Mode développement
-npm run start
-
-# Mode surveillance (watch)
+# Mode développement avec rechargement à chaud
 npm run start:dev
 
 # Mode production
 npm run start:prod
-```
 
-### Linter et compilation
-
-```bash
-# Vérification du code
+# Analyse de code (linter oxlint)
 npm run lint
 
 # Compilation TypeScript
 npm run build
 ```
 
-## Swagger UI
+---
 
-Une fois le serveur démarré, la documentation interactive Swagger UI est accessible à l'adresse suivante :
-`http://localhost:3000/api/docs`
+## Documentation Swagger / OpenAPI
 
-Elle permet d'explorer les routes, les schémas de requêtes et de réponses, ainsi que d'exécuter des requêtes directement depuis l'interface.
+Lorsque le serveur est démarré, la documentation interactive Swagger est accessible à :
+👉 **`http://localhost:3000/api/docs`**
 
-## Persistance des données
+Elle présente :
+- Toutes les routes versionnées sous `/api/v1/...`
+- Les schémas des DTOs avec leurs contraintes et exemples
+- Les codes de statut HTTP documentés (200, 201, 204, 400, 404, 409, 413, 415)
+- Les structures d'erreur `application/problem+json`
 
-Les données sont conservées dans un fichier JSON local dont le chemin est configurable avec `DATA_FILE_PATH` (valeur de développement : `./data/campusrate.json`).
+---
 
-Format du fichier :
+## Architecture des données MongoDB
 
-```json
-{
-  "places": [],
-  "reviews": []
-}
-```
+### 1. Justification Référence vs Imbrication (Option M3)
+Nous avons choisi un modèle à **deux collections distinctes avec référence** (`places` et `reviews`), où chaque document `review` stocke l'identifiant `placeId` de son endroit parent :
+- **Cycle de vie indépendant** : Les avis possèdent leur propre cycle de vie (consultation unitaire, modification, suppression indépendante sans charger l'endroit parent).
+- **Volume et croissance non bornée** : Un endroit très fréquenté peut accumuler des centaines ou milliers d'avis au fil des sessions. L'imbrication dans un sous-document de `Place` risquerait d'atteindre la limite BSON de 16 Mo par document.
+- **Performance des requêtes** : Permet de requêter la liste des endroits sans rapatrier inutilement l'intégralité du texte de tous les avis associés.
 
-- Le fichier est créé automatiquement au démarrage s'il est absent, y compris son dossier parent.
-- La lecture et l'écriture sont entièrement asynchrones (`node:fs/promises`).
-- Un fichier JSON invalide produit une erreur contrôlée au format Problem Details (500) qui n'expose ni pile d'exécution, ni chemin local, ni contenu brut du fichier.
-- Les données restent disponibles après un redémarrage du serveur.
+### 2. Index et justifications (Option M1)
+- **Index unique sur `places.name`** (`{ name: 1 }, { unique: true }`) :
+  - *Justification* : Garantit au niveau de la base de données qu'aucun doublon d'endroit n'est créé avec le même libellé.
+  - *Traduction d'erreur* : En cas de doublon, le pilote MongoDB émet l'erreur `11000`, automatiquement interceptée et traduite en HTTP `409 Conflict` au format Problem Details.
+- **Index de recherche sur `reviews.placeId`** (`{ placeId: 1 }`) :
+  - *Justification* : Optimise les opérations fréquentes de filtrage (`GET /places/:placeId/reviews`), de comptage et d'agrégation des statistiques par endroit sans balayage complet de collection (*COLLSCAN* évité).
 
-Séparation des responsabilités :
+### 3. Stratégie de suppression
+- **Refus de suppression avec conflit (409 Conflict)** : Si un client tente de supprimer un endroit qui possède encore des avis (`reviewCount > 0`), l'API refuse l'opération et renvoie un `409 Conflict`.
+- *Justification* : Cette stratégie empêche formellement l'apparition d'avis orphelins dans la base de données, préservant l'intégrité référentielle des données.
 
-| Couche | Fichier | Rôle |
-| :--- | :--- | :--- |
-| Accès aux données | `src/stockage/stockage.service.ts` | Seul endroit qui lit et écrit le fichier JSON (`lireDonnees`, `ecrireDonnees`) |
-| Logique métier | `src/places/places.service.ts`, `src/reviews/reviews.service.ts` | Règles métier, cohérence des références et recalcul de `averageRating` et `reviewCount` |
-| Entrées HTTP | `src/places/places.controller.ts`, `src/reviews/reviews.controller.ts` | Routes, codes de statut et en-tête `Location` |
-| Validation | `src/places/dto/`, `src/reviews/dto/`, `src/common/dto/` | DTO de création, de modification et de paramètres de requête |
-| Erreurs | `src/common/filters/problem-details.filter.ts` | Filtre global produisant `application/problem+json` |
+### 4. Migration des identifiants (TP1 vers TP2)
+- Dans le TP1, les identifiants étaient générés manuellement sous forme de chaînes préfixées (ex. `plc_179...`).
+- Dans le TP2, MongoDB génère des `_id` de type `ObjectId`. Grâce à la transformation `toJSON` configurée au niveau des schémas Mongoose, l'identifiant interne est projeté sous la propriété `id` sous forme de chaîne hexadécimale, tandis que `_id` et `__v` sont masqués.
 
-## Contrat d'API REST et justifications de design
+---
 
-| Élément | Choix technique | Justification |
-| :--- | :--- | :--- |
-| **Noms de ressources** | `places`, `reviews` | Noms en anglais, au pluriel, en minuscules, sans verbe d'action, conformes aux conventions REST. |
-| **Versionnement** | `/api/v1/...` | Version majeure dans l'URI pour garantir la stabilité du contrat envers les consommateurs et permettre des évolutions futures sans rupture. |
-| **Imbrication** | `/api/v1/places/:placeId/reviews` | Utilisée pour la création et la liste des avis car un avis dépend ontologiquement de l'endroit qu'il évalue. |
-| **URI directes** | `/api/v1/reviews/:id` | Utilisées pour la consultation, la modification et la suppression unitaire d'un avis via son identifiant unique, évitant une profondeur d'URI inutile. |
-| **En-tête Location** | `Location: /api/v1/{resource}/{id}` | Retourné lors des créations (201) pour indiquer l'URI canonique de la ressource créée. |
-| **Plafond de pagination** | `@Max(50)` sur `limit` avec rejet 400 | Rejette explicitement avec une erreur 400 toute valeur supérieure à 50 au lieu de plafonner silencieusement, rendant le non-respect du contrat immédiatement visible au consommateur. |
-| **Code 204 No Content** | `DELETE /places/:id`, `DELETE /reviews/:id` | Méthodes de suppression réussies retournant une réponse au corps vide conformément aux standards HTTP. |
-| **Code 409 Conflict** | Suppression d'un endroit avec avis | Refus de supprimer un endroit lié à des appréciations existantes pour préserver l'intégrité référentielle des données. |
-| **Valeurs par défaut** | `services: []`, `status: ACTIVE` | Un endroit créé sans services ne contient aucun service et sans état précisé devient `ACTIVE`; les deux valeurs sont documentées dans Swagger. |
-| **Format d'erreur** | `application/problem+json` (RFC 9457) | Format standardisé `{ type, title, status, detail, instance }` garantissant un traitement uniforme des erreurs par les clients. |
+## Options TP2 implémentées (33 points tentés, plafonnés à 30)
+
+| Code | Option | Points | Description technique |
+| :--- | :--- | :---: | :--- |
+| **M1** | Index pertinents + index unique + gestion 409 | 6 pts | Index unique sur `name` (erreur 11000 → 409 Conflict) et index sur `reviews.placeId`. |
+| **M2** | Agrégation MongoDB `$group` | 4 pts | Pipeline d'agrégation MongoDB (`calculateStats`) recalculant la note moyenne et le nombre d'avis sans exposer de pipeline client. |
+| **M3** | Justification référence vs imbrication | 2 pts | Documentation complète de l'architecture découplée en deux collections dans le README. |
+| **P1** | Allowlist explicite des filtres | 2 pts | Filtrage des endroits restreint au seul paramètre `category` via `PaginationQueryDto`. |
+| **P2** | Propriétés modifiables explicitement sélectionnées | 2 pts | `UpdatePlaceDto` et `UpdateReviewDto` restreignent strictement les champs modifiables. |
+| **H1** | Rate limiting | 4 pts | `@nestjs/throttler` configuré globalement avec limite de 100 requêtes / minute (statut 429). |
+| **H2** | Limite de taille du corps HTTP (413) | 2 pts | Corps de requête plafonné à 100 kb avec Express, produisant une erreur 413 Payload Too Large. |
+| **H3** | Vérification du Content-Type (415) | 2 pts | Middleware rejetant les requêtes POST/PATCH n'utilisant pas `application/json` avec 415. |
+| **H4** | Restriction CORS par environnement | 2 pts | Origines CORS restreintes via la variable `CORS_ORIGINS` dans `.env`. |
+| **H5** | Restriction explicite des méthodes HTTP permises | 1 pt | Déclaration explicite des verbes permises (`GET`, `POST`, `PATCH`, `DELETE`, `OPTIONS`) dans CORS. |
+| **L1** | Journalisation INFO des requêtes normales | 3 pts | `LoggingMiddleware` journalisant la méthode, l'URL, le statut et la durée de chaque requête. |
+| **L2** | Journalisation ERROR distincte sans fuite | 3 pts | `ProblemDetailsFilter` consignant les erreurs serveur et traces dans la console sans exposer de secrets ni d'URI Mongo au client. |
+
+---
+
+## Démonstration et tests (Phase 9)
+
+Une collection Postman prête à l'emploi est incluse à la racine : `campusrate.postman_collection.json`.
+Le fichier `DEMO_SCRIPT.md` détaille la séquence des 8 scénarios obligatoires à présenter pour la vidéo de démonstration.
+
+---
 
 ## Limites connues
 
-- La persistance utilise un fichier JSON local mono-instance, non optimisé pour des charges d'écriture massivement concurrentes dans un environnement multi-serveurs.
-- L'authentification des utilisateurs n'est pas couverte dans cette première version (TP1).
+- **Authentification & rôles** : Cette version n'intègre pas de gestion d'utilisateurs authentifiés par jeton JWT (fonctionnalité reportée aux travaux ultérieurs).
+- **Disponibilité MongoDB** : L'API dépend d'un serveur MongoDB accessible dès l'amorçage ; elle refuse de se déclarer prête en cas de panne de la base de données.
