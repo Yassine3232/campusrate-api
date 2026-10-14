@@ -11,8 +11,6 @@ import { AppModule } from './app.module';
 import { ProblemDetailsFilter } from './common/filters/problem-details.filter';
 
 async function bootstrap() {
-  const portServeur = process.env.PORT || 3000;
-
   const app = await NestFactory.create(AppModule, { bodyParser: false });
 
   // limite la taille du body a 100kb
@@ -56,7 +54,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  await app.listen(Number(portServeur));
+  await app.listen(process.env.PORT ?? 3000);
 }
 
-bootstrap();
+void bootstrap();

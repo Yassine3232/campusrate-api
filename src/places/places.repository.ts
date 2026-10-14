@@ -46,12 +46,7 @@ export class PlacesRepository {
     }
   }
 
-  async deleteById(id: string): Promise<boolean> {
-    try {
-      const res = await this.placeModel.findByIdAndDelete(id).exec();
-      return !!res;
-    } catch {
-      return false;
-    }
+  async deleteById(id: string): Promise<void> {
+    await this.placeModel.findByIdAndDelete(id).exec();
   }
 }

@@ -43,12 +43,8 @@ export class ReviewsRepository {
     }
   }
 
-  async deleteById(id: string): Promise<ReviewDocument | null> {
-    try {
-      return await this.reviewModel.findByIdAndDelete(id).exec();
-    } catch {
-      return null;
-    }
+  async deleteById(id: string): Promise<void> {
+    await this.reviewModel.findByIdAndDelete(id).exec();
   }
 
   // calcule la moyenne et le nombre total d avis
