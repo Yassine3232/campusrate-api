@@ -26,8 +26,10 @@ export class ReviewsController {
   // cree un avis pour un endroit
   @Post('places/:placeId/reviews')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Publier une appreciation' })
-  @ApiResponse({ status: 201, description: 'Avis cree', type: Review })
+  @ApiOperation({ summary: 'Publier une appreciation pour un endroit' })
+  @ApiResponse({ status: 201, description: 'Avis cree avec succes', type: Review })
+  @ApiResponse({ status: 400, description: 'Donnees invalides ou proprietes non autorisees' })
+  @ApiResponse({ status: 404, description: 'Endroit introuvable' })
   async create(
     @Param('placeId') placeId: string,
     @Body() createReviewDto: CreateReviewDto,
@@ -43,21 +45,28 @@ export class ReviewsController {
 
   // liste les avis d un endroit
   @Get('places/:placeId/reviews')
-  @ApiOperation({ summary: 'Lister les avis' })
+  @ApiOperation({ summary: 'Lister les avis d un endroit' })
+  @ApiResponse({ status: 200, description: 'Liste des avis de l endroit', type: [Review] })
+  @ApiResponse({ status: 404, description: 'Endroit introuvable' })
   async findyPlace(@Param('placeId') placeId: string): Promise<Review[]> {
     return this.reviewsService.trouverParEndroit(placeId);
   }
 
   // trouve un avis par id
   @Get('reviews/:id')
-  @ApiOperation({ summary: 'Consulter un avis' })
+  @ApiOperation({ summary: 'Consulter un avis par son identifiant' })
+  @ApiResponse({ status: 200, description: 'Avis trouve', type: Review })
+  @ApiResponse({ status: 404, description: 'Avis introuvable' })
   async findOne(@Param('id') id: string): Promise<Review> {
     return this.reviewsService.findOne(id);
   }
 
   // modifie un avis
   @Patch('reviews/:id')
-  @ApiOperation({ summary: 'Modifier un avis' })
+  @ApiOperation({ summary: 'Modifier partiellement un avis' })
+  @ApiResponse({ status: 200, description: 'Avis mis a jour', type: Review })
+  @ApiResponse({ status: 400, description: 'Donnees invalides ou champs non modifiables fournis' })
+  @ApiResponse({ status: 404, description: 'Avis introuvable' })
   async update(
     @Param('id') id: string,
     @Body() updateReviewDto: UpdateReviewDto,
@@ -69,6 +78,8 @@ export class ReviewsController {
   @Delete('reviews/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Supprimer un avis' })
+  @ApiResponse({ status: 204, description: 'Avis supprime avec succes' })
+  @ApiResponse({ status: 404, description: 'Avis introuvable' })
   async remove(@Param('id') id: string): Promise<void> {
     return this.reviewsService.remove(id);
   }
