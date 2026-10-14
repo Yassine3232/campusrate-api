@@ -4,7 +4,6 @@ import {
   ArgumentsHost,
   HttpException,
   HttpStatus,
-  Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 
@@ -12,16 +11,11 @@ const TITRES: Record<number, string> = {
   400: 'Bad Request',
   404: 'Not Found',
   409: 'Conflict',
-  413: 'Payload Too Large',
-  415: 'Unsupported Media Type',
   422: 'Unprocessable Entity',
-  429: 'Too Many Requests',
 };
 
 @Catch()
 export class ProblemDetailsFilter implements ExceptionFilter {
-  private readonly logger = new Logger(ProblemDetailsFilter.name);
-
   catch(exception: unknown, host: ArgumentsHost) {
     const contexte = host.switchToHttp();
     const reponse = contexte.getResponse<Response>();
@@ -51,11 +45,6 @@ export class ProblemDetailsFilter implements ExceptionFilter {
       } else if (err.name === 'CastError' || err.name === 'ValidationError') {
         statut = HttpStatus.BAD_REQUEST;
         detail = 'Données invalides.';
-      } else if (err.type === 'entity.too.large' || err.status === 413) {
-        statut = HttpStatus.PAYLOAD_TOO_LARGE;
-        detail = 'Le corps de la requête dépasse la taille maximale autorisée.';
-      } else {
-        this.logger.error(`Erreur sur ${requete.method} ${requete.url}: ${err.message}`, err.stack);
       }
     }
 

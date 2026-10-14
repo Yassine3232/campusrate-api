@@ -88,4 +88,3 @@ Ce guide décrit pas à pas les 8 scénarios obligatoires à présenter dans la 
   - Requête `10 - Publier un avis valide` → `201 Created`.
   - Requête `11 - Vérification du recalcul agrégé` → note moyenne recalculée avec `$group`.
 - **Stratégie de suppression :** Requête `12 - Conflit suppression d'un endroit avec avis` → `409 Conflict` (refus de suppression d'un parent avec avis).
-- **Option H3 (Vérification Content-Type) :** Requête `16 - Content-Type non JSON` → `415 Unsupported Media Type`.

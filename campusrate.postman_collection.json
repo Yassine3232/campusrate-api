@@ -604,45 +604,6 @@
         }
       },
       "description": "Vérifie que la ressource supprimée renvoie bien 404 Not Found avec structure Problem Details."
-    },
-    {
-      "name": "16 - Sécurité H3 : En-tête Content-Type invalide (415 Unsupported Media Type)",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 415\", function () {",
-              "    pm.response.to.have.status(415);",
-              "});"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "text/plain"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "texte brut invalide"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/places",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "places"
-          ]
-        }
-      },
-      "description": "Option H3 : Rejet avec 415 Unsupported Media Type lorsqu'une requête de création n'utilise pas application/json."
     }
   ]
 }

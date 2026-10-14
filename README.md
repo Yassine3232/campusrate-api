@@ -128,7 +128,7 @@ Nous avons choisi un modèle à **deux collections distinctes avec référence**
 
 ---
 
-## Options TP2 implémentées (33 points tentés, plafonnés à 30)
+## Options TP2 implémentées
 
 | Code | Option | Points | Description technique |
 | :--- | :--- | :---: | :--- |
@@ -137,13 +137,8 @@ Nous avons choisi un modèle à **deux collections distinctes avec référence**
 | **M3** | Justification référence vs imbrication | 2 pts | Documentation complète de l'architecture découplée en deux collections dans le README. |
 | **P1** | Allowlist explicite des filtres | 2 pts | Filtrage des endroits restreint au seul paramètre `category` via `PaginationQueryDto`. |
 | **P2** | Propriétés modifiables explicitement sélectionnées | 2 pts | `UpdatePlaceDto` et `UpdateReviewDto` restreignent strictement les champs modifiables. |
-| **H1** | Rate limiting | 4 pts | `@nestjs/throttler` configuré globalement avec limite de 100 requêtes / minute (statut 429). |
-| **H2** | Limite de taille du corps HTTP (413) | 2 pts | Corps de requête plafonné à 100 kb avec Express, produisant une erreur 413 Payload Too Large. |
-| **H3** | Vérification du Content-Type (415) | 2 pts | Middleware rejetant les requêtes POST/PATCH n'utilisant pas `application/json` avec 415. |
 | **H4** | Restriction CORS par environnement | 2 pts | Origines CORS restreintes via la variable `CORS_ORIGINS` dans `.env`. |
-| **H5** | Restriction explicite des méthodes HTTP permises | 1 pt | Déclaration explicite des verbes permises (`GET`, `POST`, `PATCH`, `DELETE`, `OPTIONS`) dans CORS. |
-| **L1** | Journalisation INFO des requêtes normales | 3 pts | `LoggingMiddleware` journalisant la méthode, l'URL, le statut et la durée de chaque requête. |
-| **L2** | Journalisation ERROR distincte sans fuite | 3 pts | `ProblemDetailsFilter` consignant les erreurs serveur et traces dans la console sans exposer de secrets ni d'URI Mongo au client. |
+| **H5** | Restriction explicite des méthodes HTTP permises | 1 pt | Déclaration explicite des verbes autorisés (`GET`, `POST`, `PATCH`, `DELETE`, `OPTIONS`) dans CORS. |
 
 ---
 
