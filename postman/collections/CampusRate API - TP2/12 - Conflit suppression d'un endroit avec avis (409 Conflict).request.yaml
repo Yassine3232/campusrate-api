@@ -1,0 +1,15 @@
+$kind: http-request
+description: "Stratégie de suppression : Refus de suppression (409 Conflict) si l'endroit possède des avis, évitant tout avis orphelin."
+url: "{{baseUrl}}/places/{{placeId}}"
+method: DELETE
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 409", function () {
+          pm.response.to.have.status(409);
+      });
+      pm.test("Content-Type is problem+json", function () {
+          pm.expect(pm.response.headers.get("Content-Type")).to.include("application/problem+json");
+      });
+    language: text/javascript
+order: 12000

@@ -1,0 +1,24 @@
+$kind: http-request
+description: Création d'un avis valide. Met à jour automatiquement la note moyenne et le compteur d'avis de l'endroit via l'agrégation MongoDB $group (Option M2).
+url: "{{baseUrl}}/places/{{placeId}}/reviews"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "authorName": "Samira",
+      "rating": 5,
+      "comment": "Superbe ambiance, silence parfait pour réviser."
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 201", function () {
+          pm.response.to.have.status(201);
+      });
+      var json = pm.response.json();
+      pm.collectionVariables.set("reviewId", json.id);
+    language: text/javascript
+order: 10000

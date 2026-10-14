@@ -1,0 +1,28 @@
+$kind: http-request
+name: 06 - Propriété inconnue envoyée par le client (400 Bad Request)
+description: "Scénario vidéo 6 : Envoi d'une propriété inconnue 'proprieteInconnue'. Rejeté avec 400 grâce à forbidNonWhitelisted: true."
+url: "{{baseUrl}}/places"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "name": "Laboratoire informatique 1",
+      "description": "Postes Linux récents",
+      "category": "COMPUTER_LAB",
+      "address": "Pavillon D, D-102",
+      "proprieteInconnue": "valeur_pirate"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 400", function () {
+          pm.response.to.have.status(400);
+      });
+      var json = pm.response.json();
+      pm.expect(json.status).to.eql(400);
+      pm.expect(json.detail).to.include("proprieteInconnue");
+    language: text/javascript
+order: 6000

@@ -1,0 +1,25 @@
+$kind: http-request
+description: "Scénario vidéo 5 : Valeur invalide rating = 9 (dépasse le maximum de 5). 400 Bad Request."
+url: "{{baseUrl}}/places/{{placeId}}/reviews"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "authorName": "Alexandre",
+      "rating": 9,
+      "comment": "Note de 9 sur 5 interdite"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 400", function () {
+          pm.response.to.have.status(400);
+      });
+      var json = pm.response.json();
+      pm.expect(json.status).to.eql(400);
+      pm.expect(json.detail).to.include("rating");
+    language: text/javascript
+order: 5000

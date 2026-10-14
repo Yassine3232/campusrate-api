@@ -1,0 +1,14 @@
+$kind: http-request
+description: "Scénario vidéo 3 : Persistance après redémarrage de l'API. Arrêter l'API (Ctrl+C), relancer (npm run start:dev) et ré-exécuter cette requête pour prouver que les données sont persistées dans MongoDB."
+url: "{{baseUrl}}/places/{{placeId}}"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200 after restart", function () {
+          pm.response.to.have.status(200);
+      });
+      var json = pm.response.json();
+      pm.expect(json.id).to.eql(pm.collectionVariables.get("placeId"));
+    language: text/javascript
+order: 3000

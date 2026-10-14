@@ -1,0 +1,28 @@
+$kind: http-request
+description: "Scénario vidéo 4 : Création avec propriété obligatoire 'name' manquante. Rejeté avec 400 Bad Request et structure RFC 9457 Problem Details."
+url: "{{baseUrl}}/places"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "description": "Lieu sans nom",
+      "category": "STUDY_SPACE",
+      "address": "Pavillon C"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 400", function () {
+          pm.response.to.have.status(400);
+      });
+      pm.test("Content-Type is problem+json", function () {
+          pm.expect(pm.response.headers.get("Content-Type")).to.include("application/problem+json");
+      });
+      var json = pm.response.json();
+      pm.expect(json.status).to.eql(400);
+      pm.expect(json.detail).to.include("name");
+    language: text/javascript
+order: 4000
