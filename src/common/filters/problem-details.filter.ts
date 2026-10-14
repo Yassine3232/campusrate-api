@@ -27,6 +27,8 @@ export class ProblemDetailsFilter implements ExceptionFilter {
         titre = 'Not Found';
       } else if (statut === HttpStatus.CONFLICT) {
         titre = 'Conflict';
+      } else if (statut === HttpStatus.UNPROCESSABLE_ENTITY) {
+        titre = 'Unprocessable Entity';
       } else {
         titre = 'Erreur';
       }
@@ -46,6 +48,25 @@ export class ProblemDetailsFilter implements ExceptionFilter {
           detail = objetErreur.error;
         }
       }
+    } else if (exception instanceof Error) {
+      // Traduit les erreurs MongoDB / Mongoose sans exposer les details internes
+      const erreur = exception as any;
+
+      if (erreur.code === 11000) {
+        // Violation d un index unique -> 409 Conflict
+        statut = HttpStatus.CONFLICT;
+        titre = 'Conflict';
+        detail = 'Une ressource avec ces données existe déjà.';
+      } else if (
+        erreur.name === 'CastError' ||
+        erreur.name === 'ValidationError'
+      ) {
+        // Document invalide cote Mongoose -> 400 Bad Request
+        statut = HttpStatus.BAD_REQUEST;
+        titre = 'Bad Request';
+        detail = 'Données invalides.';
+      }
+      // Toute autre erreur reste 500 sans exposer le message brut du pilote
     }
 
     reponse.setHeader('Content-Type', 'application/problem+json');
