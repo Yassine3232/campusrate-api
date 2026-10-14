@@ -4,11 +4,14 @@ import {
   ArgumentsHost,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 
 @Catch()
 export class ProblemDetailsFilter implements ExceptionFilter {
+  private readonly logger = new Logger(ProblemDetailsFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost) {
     const contexte = host.switchToHttp();
     const reponse = contexte.getResponse<Response>();
@@ -29,6 +32,12 @@ export class ProblemDetailsFilter implements ExceptionFilter {
         titre = 'Conflict';
       } else if (statut === HttpStatus.UNPROCESSABLE_ENTITY) {
         titre = 'Unprocessable Entity';
+      } else if (statut === HttpStatus.TOO_MANY_REQUESTS) {
+        titre = 'Too Many Requests';
+      } else if (statut === HttpStatus.PAYLOAD_TOO_LARGE) {
+        titre = 'Payload Too Large';
+      } else if (statut === HttpStatus.UNSUPPORTED_MEDIA_TYPE) {
+        titre = 'Unsupported Media Type';
       } else {
         titre = 'Erreur';
       }
@@ -65,8 +74,18 @@ export class ProblemDetailsFilter implements ExceptionFilter {
         statut = HttpStatus.BAD_REQUEST;
         titre = 'Bad Request';
         detail = 'Données invalides.';
+      } else if (erreur.type === 'entity.too.large' || erreur.status === 413) {
+        // Corps de requete depassant la limite Express -> 413 (Option H2)
+        statut = HttpStatus.PAYLOAD_TOO_LARGE;
+        titre = 'Payload Too Large';
+        detail = 'Le corps de la requête dépasse la taille maximale autorisée.';
+      } else {
+        // Option L2 : Journalisation ERROR separee avec contexte serveur uniquement
+        this.logger.error(
+          `Erreur non interceptee sur ${requete.method} ${requete.url}: ${erreur.message}`,
+          erreur.stack,
+        );
       }
-      // Toute autre erreur reste 500 sans exposer le message brut du pilote
     }
 
     reponse.setHeader('Content-Type', 'application/problem+json');

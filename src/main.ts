@@ -5,13 +5,19 @@ import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const helmet = require('helmet');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const express = require('express');
 import { AppModule } from './app.module';
 import { ProblemDetailsFilter } from './common/filters/problem-details.filter';
 
 async function bootstrap() {
   const portServeur = process.env.PORT || 3000;
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bodyParser: false });
+
+  // Option H2 : Limitation de la taille du corps de requete a 100kb
+  app.use(express.json({ limit: '100kb' }));
+  app.use(express.urlencoded({ limit: '100kb', extended: true }));
 
   // Helmet ajoute des en-tetes de securite HTTP (ex. X-Frame-Options, X-Content-Type-Options)
   // Il ne remplace pas la validation ni l'authentification
