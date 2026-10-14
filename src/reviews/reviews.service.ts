@@ -19,7 +19,7 @@ export class ReviewsService {
   ) {}
 
   // ajouter un avis pour un endroit
-  async creerPourEndroit(placeId: string, dto: CreateReviewDto): Promise<any> {
+  async creerPourEndroit(placeId: string, dto: CreateReviewDto) {
     await this.placesService.findOne(placeId);
 
     const doc = await this.reviewsRepository.create({
@@ -28,33 +28,32 @@ export class ReviewsService {
     });
 
     await this.placesService.mettreAJourStats(placeId);
-    return doc.toJSON();
+    return doc;
   }
 
   // lister les avis d un endroit
-  async trouverParEndroit(placeId: string): Promise<any[]> {
+  async trouverParEndroit(placeId: string) {
     await this.placesService.findOne(placeId);
-    const docs = await this.reviewsRepository.findByPlaceId(placeId);
-    return docs.map((d) => d.toJSON());
+    return this.reviewsRepository.findByPlaceId(placeId);
   }
 
   // trouver un avis par id
-  async findOne(id: string): Promise<any> {
+  async findOne(id: string) {
     const doc = await this.reviewsRepository.findById(id);
     if (!doc) {
       throw new NotFoundException(`L'appréciation avec l'identifiant ${id} n'existe pas.`);
     }
-    return doc.toJSON();
+    return doc;
   }
 
   // modifier un avis
-  async update(id: string, dto: UpdateReviewDto): Promise<any> {
+  async update(id: string, dto: UpdateReviewDto) {
     const doc = await this.reviewsRepository.updateById(id, dto);
     if (!doc) {
       throw new NotFoundException(`L'appréciation avec l'identifiant ${id} n'existe pas.`);
     }
     await this.placesService.mettreAJourStats(doc.placeId);
-    return doc.toJSON();
+    return doc;
   }
 
   // supprimer un avis

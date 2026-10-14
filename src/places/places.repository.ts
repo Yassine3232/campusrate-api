@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Place, PlaceDocument } from './schemas/place.schema';
+import { Place } from './schemas/place.schema';
 
 @Injectable()
 export class PlacesRepository {
   constructor(
-    @InjectModel(Place.name) private readonly placeModel: Model<PlaceDocument>,
+    @InjectModel(Place.name) private readonly placeModel: Model<Place>,
   ) {}
 
-  async create(data: Partial<Place>): Promise<PlaceDocument> {
+  async create(data: Partial<Place>): Promise<Place> {
     return this.placeModel.create(data);
   }
 
@@ -17,7 +17,7 @@ export class PlacesRepository {
     filter: Record<string, any> = {},
     skip = 0,
     limit = 10,
-  ): Promise<{ data: PlaceDocument[]; totalItems: number }> {
+  ): Promise<{ data: Place[]; totalItems: number }> {
     const [data, totalItems] = await Promise.all([
       this.placeModel.find(filter).skip(skip).limit(limit).exec(),
       this.placeModel.countDocuments(filter).exec(),
@@ -25,7 +25,7 @@ export class PlacesRepository {
     return { data, totalItems };
   }
 
-  async findById(id: string): Promise<PlaceDocument | null> {
+  async findById(id: string): Promise<Place | null> {
     try {
       return await this.placeModel.findById(id).exec();
     } catch {
@@ -36,7 +36,7 @@ export class PlacesRepository {
   async updateById(
     id: string,
     data: Partial<Place>,
-  ): Promise<PlaceDocument | null> {
+  ): Promise<Place | null> {
     try {
       return await this.placeModel
         .findByIdAndUpdate(id, data, { new: true, runValidators: true })

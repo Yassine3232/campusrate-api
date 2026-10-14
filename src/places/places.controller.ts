@@ -17,7 +17,6 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PlacesService } from './places.service';
 import { CreatePlaceDto } from './dto/create-place.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
-import { Place } from './entities/place.entity';
 import { PaginationQueryDto } from '../common/dto/pagination.dto';
 
 @ApiTags('Places')
@@ -29,7 +28,7 @@ export class PlacesController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Creation d endroit' })
-  @ApiResponse({ status: 201, description: 'Endroit cree', type: Place })
+  @ApiResponse({ status: 201, description: 'Endroit cree' })
   @ApiResponse({ status: 400, description: 'Donnees invalides' })
   @ApiResponse({ status: 409, description: 'Nom deja utilise' })
   async create(
@@ -37,7 +36,7 @@ export class PlacesController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const place = await this.placesService.create(createPlaceDto);
-    res.setHeader('Location', `/api/v1/places/${place.id}`);
+    res.setHeader('Location', `/api/v1/places/${(place as any).id || (place as any)._id}`);
     return place;
   }
 
@@ -53,23 +52,23 @@ export class PlacesController {
   // un endroit par id
   @Get(':id')
   @ApiOperation({ summary: 'Consulter un endroit' })
-  @ApiResponse({ status: 200, description: 'Endroit trouve', type: Place })
+  @ApiResponse({ status: 200, description: 'Endroit trouve' })
   @ApiResponse({ status: 404, description: 'Endroit introuvable' })
-  async findOne(@Param('id') id: string): Promise<Place> {
+  async findOne(@Param('id') id: string) {
     return this.placesService.findOne(id);
   }
 
   // modifie un endroit
   @Patch(':id')
   @ApiOperation({ summary: 'Modifier un endroit' })
-  @ApiResponse({ status: 200, description: 'Endroit modifie', type: Place })
+  @ApiResponse({ status: 200, description: 'Endroit modifie' })
   @ApiResponse({ status: 400, description: 'Donnees invalides' })
   @ApiResponse({ status: 404, description: 'Endroit introuvable' })
   @ApiResponse({ status: 409, description: 'Nom deja utilise' })
   async update(
     @Param('id') id: string,
     @Body() updatePlaceDto: UpdatePlaceDto,
-  ): Promise<Place> {
+  ) {
     return this.placesService.update(id, updatePlaceDto);
   }
 

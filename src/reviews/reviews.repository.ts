@@ -1,20 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Review, ReviewDocument } from './schemas/review.schema';
+import { Review } from './schemas/review.schema';
 
 @Injectable()
 export class ReviewsRepository {
   constructor(
     @InjectModel(Review.name)
-    private readonly reviewModel: Model<ReviewDocument>,
+    private readonly reviewModel: Model<Review>,
   ) {}
 
-  async create(data: Partial<Review>): Promise<ReviewDocument> {
+  async create(data: Partial<Review>): Promise<Review> {
     return this.reviewModel.create(data);
   }
 
-  async findByPlaceId(placeId: string): Promise<ReviewDocument[]> {
+  async findByPlaceId(placeId: string): Promise<Review[]> {
     return this.reviewModel.find({ placeId }).exec();
   }
 
@@ -22,7 +22,7 @@ export class ReviewsRepository {
     return this.reviewModel.countDocuments({ placeId }).exec();
   }
 
-  async findById(id: string): Promise<ReviewDocument | null> {
+  async findById(id: string): Promise<Review | null> {
     try {
       return await this.reviewModel.findById(id).exec();
     } catch {
@@ -33,7 +33,7 @@ export class ReviewsRepository {
   async updateById(
     id: string,
     data: Partial<Review>,
-  ): Promise<ReviewDocument | null> {
+  ): Promise<Review | null> {
     try {
       return await this.reviewModel
         .findByIdAndUpdate(id, data, { new: true, runValidators: true })

@@ -16,7 +16,6 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
-import { Review } from './entities/review.entity';
 
 @ApiTags('Reviews')
 @Controller()
@@ -27,7 +26,7 @@ export class ReviewsController {
   @Post('places/:placeId/reviews')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Publier une appreciation' })
-  @ApiResponse({ status: 201, description: 'Avis cree', type: Review })
+  @ApiResponse({ status: 201, description: 'Avis cree' })
   @ApiResponse({ status: 400, description: 'Donnees invalides' })
   @ApiResponse({ status: 404, description: 'Endroit introuvable' })
   async create(
@@ -39,38 +38,38 @@ export class ReviewsController {
       placeId,
       createReviewDto,
     );
-    res.setHeader('Location', `/api/v1/reviews/${appreciation.id}`);
+    res.setHeader('Location', `/api/v1/reviews/${(appreciation as any).id || (appreciation as any)._id}`);
     return appreciation;
   }
 
   // liste les avis d un endroit
   @Get('places/:placeId/reviews')
   @ApiOperation({ summary: 'Lister les avis' })
-  @ApiResponse({ status: 200, description: 'Liste des avis', type: [Review] })
+  @ApiResponse({ status: 200, description: 'Liste des avis' })
   @ApiResponse({ status: 404, description: 'Endroit introuvable' })
-  async findyPlace(@Param('placeId') placeId: string): Promise<Review[]> {
+  async findyPlace(@Param('placeId') placeId: string) {
     return this.reviewsService.trouverParEndroit(placeId);
   }
 
   // trouve un avis par id
   @Get('reviews/:id')
   @ApiOperation({ summary: 'Consulter un avis' })
-  @ApiResponse({ status: 200, description: 'Avis trouve', type: Review })
+  @ApiResponse({ status: 200, description: 'Avis trouve' })
   @ApiResponse({ status: 404, description: 'Avis introuvable' })
-  async findOne(@Param('id') id: string): Promise<Review> {
+  async findOne(@Param('id') id: string) {
     return this.reviewsService.findOne(id);
   }
 
   // modifie un avis
   @Patch('reviews/:id')
   @ApiOperation({ summary: 'Modifier un avis' })
-  @ApiResponse({ status: 200, description: 'Avis modifie', type: Review })
+  @ApiResponse({ status: 200, description: 'Avis modifie' })
   @ApiResponse({ status: 400, description: 'Donnees invalides' })
   @ApiResponse({ status: 404, description: 'Avis introuvable' })
   async update(
     @Param('id') id: string,
     @Body() updateReviewDto: UpdateReviewDto,
-  ): Promise<Review> {
+  ) {
     return this.reviewsService.update(id, updateReviewDto);
   }
 

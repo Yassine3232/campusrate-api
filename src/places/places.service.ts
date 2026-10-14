@@ -31,15 +31,14 @@ export class PlacesService {
   }
 
   // ajouter un nouvel endroit
-  async create(dto: CreatePlaceDto): Promise<any> {
-    const doc = await this.placesRepository.create({
+  async create(dto: CreatePlaceDto) {
+    return this.placesRepository.create({
       ...dto,
       services: dto.services || [],
       status: dto.status || PlaceStatus.ACTIVE,
       averageRating: null,
       reviewCount: 0,
     });
-    return doc.toJSON();
   }
 
   // lister les endroits avec pagination
@@ -62,7 +61,7 @@ export class PlacesService {
     const totalPages = totalItems > 0 ? Math.ceil(totalItems / limit) : 0;
 
     return {
-      data: data.map((d) => d.toJSON()),
+      data,
       pagination: {
         page,
         limit,
@@ -73,21 +72,21 @@ export class PlacesService {
   }
 
   // chercher un endroit par id
-  async findOne(id: string): Promise<any> {
+  async findOne(id: string) {
     const doc = await this.placesRepository.findById(id);
     if (!doc) {
       throw new NotFoundException(`L'endroit avec l'identifiant ${id} n'existe pas.`);
     }
-    return doc.toJSON();
+    return doc;
   }
 
   // modifier un endroit
-  async update(id: string, dto: UpdatePlaceDto): Promise<any> {
+  async update(id: string, dto: UpdatePlaceDto) {
     const doc = await this.placesRepository.updateById(id, dto);
     if (!doc) {
       throw new NotFoundException(`L'endroit avec l'identifiant ${id} n'existe pas.`);
     }
-    return doc.toJSON();
+    return doc;
   }
 
   // supprimer un endroit s il n a pas d avis
