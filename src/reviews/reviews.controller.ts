@@ -1,4 +1,4 @@
-﻿// controleur reviews
+// controleur reviews
 import {
   Controller,
   Get,
@@ -12,11 +12,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { Response } from 'express';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
@@ -35,7 +31,7 @@ export class ReviewsController {
   async create(
     @Param('placeId') placeId: string,
     @Body() createReviewDto: CreateReviewDto,
-    @Res({ passthrough: true }) res: Response, // pour mettre le header location sans casser le retour auto
+    @Res({ passthrough: true }) res: Response,
   ) {
     const appreciation = await this.reviewsService.creerPourEndroit(
       placeId,
@@ -48,21 +44,21 @@ export class ReviewsController {
   // liste les avis d un endroit
   @Get('places/:placeId/reviews')
   @ApiOperation({ summary: 'Lister les avis' })
-  findyPlace(@Param('placeId') placeId: string): Promise<Review[]> {
+  async findyPlace(@Param('placeId') placeId: string): Promise<Review[]> {
     return this.reviewsService.trouverParEndroit(placeId);
   }
 
   // trouve un avis par id
   @Get('reviews/:id')
   @ApiOperation({ summary: 'Consulter un avis' })
-  findOne(@Param('id') id: string): Promise<Review> {
+  async findOne(@Param('id') id: string): Promise<Review> {
     return this.reviewsService.findOne(id);
   }
 
   // modifie un avis
   @Patch('reviews/:id')
   @ApiOperation({ summary: 'Modifier un avis' })
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateReviewDto: UpdateReviewDto,
   ): Promise<Review> {
@@ -73,7 +69,7 @@ export class ReviewsController {
   @Delete('reviews/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Supprimer un avis' })
-  remove(@Param('id') id: string): Promise<void> {
+  async remove(@Param('id') id: string): Promise<void> {
     return this.reviewsService.remove(id);
   }
 }

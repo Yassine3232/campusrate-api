@@ -1,4 +1,4 @@
-﻿// controleur places
+// controleur places
 import {
   Controller,
   Get,
@@ -13,11 +13,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { Response } from 'express';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PlacesService } from './places.service';
 import { CreatePlaceDto } from './dto/create-place.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
@@ -36,7 +32,7 @@ export class PlacesController {
   @ApiResponse({ status: 201, description: 'Endroit cree', type: Place })
   async create(
     @Body() createPlaceDto: CreatePlaceDto,
-    @Res({ passthrough: true }) res: Response, // pour mettre le header location sans casser le retour auto
+    @Res({ passthrough: true }) res: Response,
   ) {
     const place = await this.placesService.create(createPlaceDto);
     res.setHeader('Location', `/api/v1/places/${place.id}`);
@@ -46,21 +42,21 @@ export class PlacesController {
   // liste les endroits avec filtres
   @Get()
   @ApiOperation({ summary: 'Lister les endroits' })
-  findAll(@Query() query: PaginationQueryDto) {
+  async findAll(@Query() query: PaginationQueryDto) {
     return this.placesService.findAll(query);
   }
 
   // un endroit par id
   @Get(':id')
   @ApiOperation({ summary: 'Consulter un endroit' })
-  findOne(@Param('id') id: string): Promise<Place> {
+  async findOne(@Param('id') id: string): Promise<Place> {
     return this.placesService.findOne(id);
   }
 
   // modifie un endroit
   @Patch(':id')
   @ApiOperation({ summary: 'Modifier un endroit' })
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updatePlaceDto: UpdatePlaceDto,
   ): Promise<Place> {
@@ -71,7 +67,7 @@ export class PlacesController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Supprimer un endroit' })
-  remove(@Param('id') id: string): Promise<void> {
+  async remove(@Param('id') id: string): Promise<void> {
     return this.placesService.remove(id);
   }
 }

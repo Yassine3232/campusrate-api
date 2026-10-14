@@ -2,57 +2,36 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
-import { StockageService } from '../stockage/stockage.service';
+import { PlacesRepository } from './places.repository';
 import { CreatePlaceDto } from './dto/create-place.dto';
 import { UpdatePlaceDto } from './dto/update-place.dto';
 import { PaginationQueryDto } from '../common/dto/pagination.dto';
-import { Place } from './entities/place.entity';
-import { Review } from '../reviews/entities/review.entity';
+import { Place } from './schemas/place.schema';
+import { ReviewsRepository } from '../reviews/reviews.repository';
 import { PlaceStatus } from '../common/enums/status.enum';
 
 @Injectable()
 export class PlacesService {
-  constructor(private readonly stockageService: StockageService) {}
+  constructor(
+    private readonly placesRepository: PlacesRepository,
+    @Inject(forwardRef(() => ReviewsRepository))
+    private readonly reviewsRepository: ReviewsRepository,
+  ) {}
 
-  // generer un identifiant court unique pour un nouveau place
-  private genererId(): string {
-    const temps = Date.now().toString();
-    const hasard = Math.floor(Math.random() * 10000).toString();
-    return 'plc_' + temps + hasard; // colle plc_ devant le temps et un nombre pour faire un id unique
+  // recalculer les statistiques d un endroit avec MongoDB
+  async mettreAJourStats(placeId: string): Promise<void> {
+    const stats = await this.reviewsRepository.calculateStats(placeId);
+    await this.placesRepository.updateById(placeId, {
+      averageRating: stats.averageRating,
+      reviewCount: stats.reviewCount,
+    });
   }
 
-  // recalculer la note moyenne et le nombre davis d un place
-  recalculerStats(endroit: Place, reviews: Review[]) {
-    const listeNotes: Review[] = [];
-
-    for (let i = 0; i < reviews.length; i++) {
-      if (reviews[i].placeId === endroit.id) {
-        listeNotes.push(reviews[i]);
-      }
-    }
-
-    endroit.reviewCount = listeNotes.length;
-
-    if (listeNotes.length === 0) {
-      endroit.averageRating = null;
-    } else {
-      let total = 0;
-
-      for (let i = 0; i < listeNotes.length; i++) {
-        total = total + listeNotes[i].rating;
-      }
-
-      const moyenne = total / listeNotes.length;
-      endroit.averageRating = Math.round(moyenne * 100) / 100;
-    }
-  }
-
-  // ajouter un nouveau place au fichier de donnees
-  async create(dto: CreatePlaceDto): Promise<Place> {
-    const donnees = await this.stockageService.lireDonnees();
-    const maintenant = new Date().toISOString();
-
+  // ajouter un nouveau place dans MongoDB
+  async create(dto: CreatePlaceDto): Promise<any> {
     let listeServices: string[] = [];
 
     if (dto.services) {
@@ -65,44 +44,43 @@ export class PlacesService {
       statutEndroit = dto.status;
     }
 
-    const endroit: Place = {
-      id: this.genererId(),
-      name: dto.name,
-      description: dto.description,
-      category: dto.category,
-      address: dto.address,
-      services: listeServices,
-      status: statutEndroit,
-      averageRating: null,
-      reviewCount: 0,
-      createdAt: maintenant,
-      updatedAt: maintenant,
-    };
-
-    donnees.places.push(endroit);
-    await this.stockageService.ecrireDonnees(donnees);
-    return endroit;
+    try {
+      const doc = await this.placesRepository.create({
+        name: dto.name,
+        description: dto.description,
+        category: dto.category,
+        address: dto.address,
+        services: listeServices,
+        status: statutEndroit,
+        averageRating: null,
+        reviewCount: 0,
+      });
+      return doc.toJSON();
+    } catch (error: any) {
+      if (error && error.code === 11000) {
+        throw new ConflictException('Un endroit avec ce nom existe déjà.');
+      }
+      throw error;
+    }
   }
 
   // lister tous les endroits avec filtrage et pagination
   async findAll(query: PaginationQueryDto) {
-    const donnees = await this.stockageService.lireDonnees();
+    const pageDemandee = query.page || 1;
+    const limite = query.limit || 10;
+    const skip = (pageDemandee - 1) * limite;
 
-    let listeEndroits: Place[] = [];
+    const filtre: Record<string, any> = {};
 
     if (query.category) {
-      for (let i = 0; i < donnees.places.length; i++) {
-        if (donnees.places[i].category === query.category) {
-          listeEndroits.push(donnees.places[i]);
-        }
-      }
-    } else {
-      listeEndroits = donnees.places;
+      filtre.category = query.category;
     }
 
-    const totalItems = listeEndroits.length;
-    const pageDemandee = query.page;
-    const limite = query.limit;
+    const { data, totalItems } = await this.placesRepository.findAll(
+      filtre,
+      skip,
+      limite,
+    );
 
     let totalPages = 0;
 
@@ -110,12 +88,8 @@ export class PlacesService {
       totalPages = Math.ceil(totalItems / limite);
     }
 
-    const indexDebut = (pageDemandee - 1) * limite;
-    const indexFin = indexDebut + limite;
-    const elementsPage = listeEndroits.slice(indexDebut, indexFin);
-
     return {
-      data: elementsPage,
+      data: data.map((d) => d.toJSON()),
       pagination: {
         page: pageDemandee,
         limit: limite,
@@ -126,127 +100,78 @@ export class PlacesService {
   }
 
   // rechercher un endroit par son identifiant
-  async findOne(id: string): Promise<Place> {
-    const donnees = await this.stockageService.lireDonnees();
+  async findOne(id: string): Promise<any> {
+    const doc = await this.placesRepository.findById(id);
 
-    let endroitTrouve: Place | null = null;
-
-    for (let i = 0; i < donnees.places.length; i++) {
-      if (donnees.places[i].id === id) {
-        endroitTrouve = donnees.places[i];
-        break;
-      }
-    }
-
-    if (!endroitTrouve) {
+    if (!doc) {
       throw new NotFoundException(
         `L'endroit avec l'identifiant ${id} n'existe pas.`,
       );
     }
 
-    return endroitTrouve;
+    return doc.toJSON();
   }
 
   // modifier les informations d un endroit existant
-  async update(id: string, dto: UpdatePlaceDto): Promise<Place> {
-    const donnees = await this.stockageService.lireDonnees();
+  async update(id: string, dto: UpdatePlaceDto): Promise<any> {
+    await this.findOne(id);
 
-    let endroitModifie: Place | null = null;
-
-    for (let i = 0; i < donnees.places.length; i++) {
-      if (donnees.places[i].id === id) {
-        endroitModifie = donnees.places[i];
-        break;
-      }
-    }
-
-    if (!endroitModifie) {
-      throw new NotFoundException(
-        `L'endroit avec l'identifiant ${id} n'existe pas.`,
-      );
-    }
+    const donneesModifiees: Partial<Place> = {};
 
     if (dto.name !== undefined) {
-      endroitModifie.name = dto.name;
+      donneesModifiees.name = dto.name;
     }
 
     if (dto.description !== undefined) {
-      endroitModifie.description = dto.description;
+      donneesModifiees.description = dto.description;
     }
 
     if (dto.category !== undefined) {
-      endroitModifie.category = dto.category;
+      donneesModifiees.category = dto.category;
     }
 
     if (dto.address !== undefined) {
-      endroitModifie.address = dto.address;
+      donneesModifiees.address = dto.address;
     }
 
     if (dto.services !== undefined) {
-      endroitModifie.services = dto.services;
+      donneesModifiees.services = dto.services;
     }
 
     if (dto.status !== undefined) {
-      endroitModifie.status = dto.status;
+      donneesModifiees.status = dto.status;
     }
 
-    endroitModifie.updatedAt = new Date().toISOString();
+    try {
+      const doc = await this.placesRepository.updateById(id, donneesModifiees);
 
-    await this.stockageService.ecrireDonnees(donnees);
-    return endroitModifie;
+      if (!doc) {
+        throw new NotFoundException(
+          `L'endroit avec l'identifiant ${id} n'existe pas.`,
+        );
+      }
+
+      return doc.toJSON();
+    } catch (error: any) {
+      if (error && error.code === 11000) {
+        throw new ConflictException('Un endroit avec ce nom existe déjà.');
+      }
+      throw error;
+    }
   }
 
   // supprimer un place si aucune appreciation ne lui est liee
   async remove(id: string): Promise<void> {
-    const donnees = await this.stockageService.lireDonnees();
+    await this.findOne(id);
 
-    let indexEndroit = -1;
+    const nombreAvis = await this.reviewsRepository.countByPlaceId(id);
 
-    for (let i = 0; i < donnees.places.length; i++) {
-      if (donnees.places[i].id === id) {
-        indexEndroit = i;
-        break;
-      }
-    }
-
-    if (indexEndroit === -1) {
-      throw new NotFoundException(
-        `L'endroit avec l'identifiant ${id} n'existe pas.`,
-      );
-    }
-
-    let possedeAvis = false;
-
-    for (let i = 0; i < donnees.reviews.length; i++) {
-      if (donnees.reviews[i].placeId === id) {
-        possedeAvis = true;
-        break;
-      }
-    }
-
-    if (possedeAvis) {
+    if (nombreAvis > 0) {
       throw new ConflictException(
         'Impossible de supprimer un endroit qui possède des appréciations.',
       );
     }
 
-    const endroitsRestants: Place[] = [];
-
-    for (let i = 0; i < donnees.places.length; i++) {
-      if (i !== indexEndroit) {
-        endroitsRestants.push(donnees.places[i]);
-      }
-    }
-
-    donnees.places = endroitsRestants;
-
-    await this.stockageService.ecrireDonnees(donnees);
+    await this.placesRepository.deleteById(id);
   }
 }
-
-
-
-
-
-
-

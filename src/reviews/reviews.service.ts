@@ -1,219 +1,105 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { StockageService } from '../stockage/stockage.service';
+import {
+  Injectable,
+  NotFoundException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
+import { ReviewsRepository } from './reviews.repository';
 import { PlacesService } from '../places/places.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
-import { Review } from './entities/review.entity';
-import { Place } from '../places/entities/place.entity';
+import { Review } from './schemas/review.schema';
 
 @Injectable()
 export class ReviewsService {
   constructor(
-    private readonly stockageService: StockageService,
+    private readonly reviewsRepository: ReviewsRepository,
+    @Inject(forwardRef(() => PlacesService))
     private readonly placesService: PlacesService,
   ) {}
-
-  private genererId(): string {
-    const temps = Date.now().toString();
-    const hasard = Math.floor(Math.random() * 10000).toString();
-    return 'rev_' + temps + hasard; // colle rev_ devant le temps et un nombre pour faire un id unique
-  }
 
   // ajouter un nouvel avis pour un endroit et mettre a jour les statistiques
   async creerPourEndroit(
     placeId: string,
     dto: CreateReviewDto,
-  ): Promise<Review> {
-    const donnees = await this.stockageService.lireDonnees();
+  ): Promise<any> {
+    // Verifier que l endroit parent existe bien
+    await this.placesService.findOne(placeId);
 
-    let endroit: Place | null = null;
-
-    for (let i = 0; i < donnees.places.length; i++) {
-      if (donnees.places[i].id === placeId) {
-        endroit = donnees.places[i];
-        break;
-      }
-    }
-
-    if (!endroit) {
-      throw new NotFoundException(
-        `L'endroit avec l'identifiant ${placeId} n'existe pas.`,
-      );
-    }
-
-    const maintenant = new Date().toISOString();
-
-    const appreciation: Review = {
-      id: this.genererId(),
+    const doc = await this.reviewsRepository.create({
       placeId: placeId,
       authorName: dto.authorName,
       rating: dto.rating,
       comment: dto.comment,
-      createdAt: maintenant,
-      updatedAt: maintenant,
-    };
+    });
 
-    donnees.reviews.push(appreciation);
-    this.placesService.recalculerStats(endroit, donnees.reviews);
-    endroit.updatedAt = maintenant;
+    // Recalculer les statistiques de l endroit
+    await this.placesService.mettreAJourStats(placeId);
 
-    await this.stockageService.ecrireDonnees(donnees);
-    return appreciation;
+    return doc.toJSON();
   }
 
   // lister tous les avis associes a un endroit
-  async trouverParEndroit(placeId: string): Promise<Review[]> {
-    const donnees = await this.stockageService.lireDonnees();
+  async trouverParEndroit(placeId: string): Promise<any[]> {
+    // Verifier que l endroit parent existe bien (retourne 404 si inexistant)
+    await this.placesService.findOne(placeId);
 
-    let endroitExiste = false;
-
-    for (let i = 0; i < donnees.places.length; i++) {
-      if (donnees.places[i].id === placeId) {
-        endroitExiste = true;
-        break;
-      }
-    }
-
-    if (!endroitExiste) {
-      throw new NotFoundException(
-        `L'endroit avec l'identifiant ${placeId} n'existe pas.`,
-      );
-    }
-
-    const listeAppreciations: Review[] = [];
-
-    for (let i = 0; i < donnees.reviews.length; i++) {
-      if (donnees.reviews[i].placeId === placeId) {
-        listeAppreciations.push(donnees.reviews[i]);
-      }
-    }
-
-    return listeAppreciations;
+    const docs = await this.reviewsRepository.findByPlaceId(placeId);
+    return docs.map((d) => d.toJSON());
   }
 
   // rechercher un avis par son identifiant
-  async findOne(id: string): Promise<Review> {
-    const donnees = await this.stockageService.lireDonnees();
+  async findOne(id: string): Promise<any> {
+    const doc = await this.reviewsRepository.findById(id);
 
-    let appreciationTrouvee: Review | null = null;
-
-    for (let i = 0; i < donnees.reviews.length; i++) {
-      if (donnees.reviews[i].id === id) {
-        appreciationTrouvee = donnees.reviews[i];
-        break;
-      }
-    }
-
-    if (!appreciationTrouvee) {
+    if (!doc) {
       throw new NotFoundException(
         `L'appréciation avec l'identifiant ${id} n'existe pas.`,
       );
     }
 
-    return appreciationTrouvee;
+    return doc.toJSON();
   }
 
   // modifier les informations d un avis existant
-  async update(id: string, dto: UpdateReviewDto): Promise<Review> {
-    const donnees = await this.stockageService.lireDonnees();
+  async update(id: string, dto: UpdateReviewDto): Promise<any> {
+    const avisExistant = await this.findOne(id);
 
-    let appreciationModifiee: Review | null = null;
+    const donneesModifiees: Partial<Review> = {};
 
-    for (let i = 0; i < donnees.reviews.length; i++) {
-      if (donnees.reviews[i].id === id) {
-        appreciationModifiee = donnees.reviews[i];
-        break;
-      }
+    if (dto.authorName !== undefined) {
+      donneesModifiees.authorName = dto.authorName;
     }
 
-    if (!appreciationModifiee) {
+    if (dto.rating !== undefined) {
+      donneesModifiees.rating = dto.rating;
+    }
+
+    if (dto.comment !== undefined) {
+      donneesModifiees.comment = dto.comment;
+    }
+
+    const doc = await this.reviewsRepository.updateById(id, donneesModifiees);
+
+    if (!doc) {
       throw new NotFoundException(
         `L'appréciation avec l'identifiant ${id} n'existe pas.`,
       );
     }
 
-    if (dto.authorName !== undefined) {
-      appreciationModifiee.authorName = dto.authorName;
-    }
+    // Recalculer les statistiques de l endroit parent
+    await this.placesService.mettreAJourStats(avisExistant.placeId);
 
-    if (dto.rating !== undefined) {
-      appreciationModifiee.rating = dto.rating;
-    }
-
-    if (dto.comment !== undefined) {
-      appreciationModifiee.comment = dto.comment;
-    }
-
-    const maintenant = new Date().toISOString();
-    appreciationModifiee.updatedAt = maintenant;
-
-    let endroit: Place | null = null;
-
-    for (let i = 0; i < donnees.places.length; i++) {
-      if (donnees.places[i].id === appreciationModifiee.placeId) {
-        endroit = donnees.places[i];
-        break;
-      }
-    }
-
-    if (endroit) {
-      this.placesService.recalculerStats(endroit, donnees.reviews);
-      endroit.updatedAt = maintenant;
-    }
-
-    await this.stockageService.ecrireDonnees(donnees);
-    return appreciationModifiee;
+    return doc.toJSON();
   }
 
   // supprimer un avis et mettre a jour les statistiques du place concerne
   async remove(id: string): Promise<void> {
-    const donnees = await this.stockageService.lireDonnees();
+    const avisExistant = await this.findOne(id);
 
-    let indexAppreciation = -1;
+    await this.reviewsRepository.deleteById(id);
 
-    for (let i = 0; i < donnees.reviews.length; i++) {
-      if (donnees.reviews[i].id === id) {
-        indexAppreciation = i;
-        break;
-      }
-    }
-
-    if (indexAppreciation === -1) {
-      throw new NotFoundException(
-        `L'appréciation avec l'identifiant ${id} n'existe pas.`,
-      );
-    }
-
-    const idEndroit = donnees.reviews[indexAppreciation].placeId;
-
-    const appreciationsRestantes: Review[] = [];
-
-    for (let i = 0; i < donnees.reviews.length; i++) {
-      if (i !== indexAppreciation) {
-        appreciationsRestantes.push(donnees.reviews[i]);
-      }
-    }
-
-    donnees.reviews = appreciationsRestantes;
-
-    let endroit: Place | null = null;
-
-    for (let i = 0; i < donnees.places.length; i++) {
-      if (donnees.places[i].id === idEndroit) {
-        endroit = donnees.places[i];
-        break;
-      }
-    }
-
-    if (endroit) {
-      this.placesService.recalculerStats(endroit, donnees.reviews);
-      endroit.updatedAt = new Date().toISOString();
-    }
-
-    await this.stockageService.ecrireDonnees(donnees);
+    // Recalculer les statistiques de l endroit parent
+    await this.placesService.mettreAJourStats(avisExistant.placeId);
   }
 }
-
-
-
-

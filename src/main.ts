@@ -7,16 +7,7 @@ import { AppModule } from './app.module';
 import { ProblemDetailsFilter } from './common/filters/problem-details.filter';
 
 async function bootstrap() {
-  const portServeur = process.env.PORT;
-  const fichierData = process.env.DATA_FILE_PATH;
-
-  if (!portServeur) {
-    throw new Error('Le port est manquant');
-  }
-
-  if (!fichierData) {
-    throw new Error('Le fichier data est manquant');
-  }
+  const portServeur = process.env.PORT || 3000;
 
   const app = await NestFactory.create(AppModule);
 
@@ -43,4 +34,3 @@ async function bootstrap() {
 }
 
 bootstrap();
-
