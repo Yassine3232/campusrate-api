@@ -58,11 +58,10 @@ export class ProblemDetailsFilter implements ExceptionFilter {
         }
       }
     } else if (exception instanceof Error) {
-      // Traduit les erreurs MongoDB / Mongoose sans exposer les details internes
       const erreur = exception as any;
 
       if (erreur.code === 11000) {
-        // Violation d un index unique -> 409 Conflict
+        // doublon sur un index unique
         statut = HttpStatus.CONFLICT;
         titre = 'Conflict';
         detail = 'Une ressource avec ces données existe déjà.';
@@ -70,19 +69,19 @@ export class ProblemDetailsFilter implements ExceptionFilter {
         erreur.name === 'CastError' ||
         erreur.name === 'ValidationError'
       ) {
-        // Document invalide cote Mongoose -> 400 Bad Request
+        // id ou donnees mongoose invalides
         statut = HttpStatus.BAD_REQUEST;
         titre = 'Bad Request';
         detail = 'Données invalides.';
       } else if (erreur.type === 'entity.too.large' || erreur.status === 413) {
-        // Corps de requete depassant la limite Express -> 413 (Option H2)
+        // body trop lourd
         statut = HttpStatus.PAYLOAD_TOO_LARGE;
         titre = 'Payload Too Large';
         detail = 'Le corps de la requête dépasse la taille maximale autorisée.';
       } else {
-        // Option L2 : Journalisation ERROR separee avec contexte serveur uniquement
+        // log l erreur dans la console sans la montrer au client
         this.logger.error(
-          `Erreur non interceptee sur ${requete.method} ${requete.url}: ${erreur.message}`,
+          `Erreur sur ${requete.method} ${requete.url}: ${erreur.message}`,
           erreur.stack,
         );
       }

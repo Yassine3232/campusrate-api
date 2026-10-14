@@ -5,8 +5,7 @@ import {
 } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 
-// Middleware de verification Content-Type (Option H3)
-// Rejette avec 415 Unsupported Media Type toute requete POST ou PATCH qui ne specifie pas application/json
+// verifie que le body est en json
 @Injectable()
 export class ContentTypeMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
@@ -14,7 +13,6 @@ export class ContentTypeMiddleware implements NestMiddleware {
 
     if (methodesAvecCorps.includes(req.method)) {
       const contentType = req.headers['content-type'];
-      // Si la requete a un contenu et que ce n est pas du json
       const hasContentLength = req.headers['content-length'] && Number(req.headers['content-length']) > 0;
       const isTransferChunked = req.headers['transfer-encoding'] === 'chunked';
 

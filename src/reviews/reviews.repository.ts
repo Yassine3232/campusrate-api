@@ -51,7 +51,7 @@ export class ReviewsRepository {
     }
   }
 
-  // Agregation MongoDB (Option M2) pour calculer averageRating et reviewCount
+  // calcule la moyenne et le nombre total d avis
   async calculateStats(
     placeId: string,
   ): Promise<{ averageRating: number | null; reviewCount: number }> {

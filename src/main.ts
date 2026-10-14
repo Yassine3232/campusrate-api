@@ -15,19 +15,17 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule, { bodyParser: false });
 
-  // Option H2 : Limitation de la taille du corps de requete a 100kb
+  // limite la taille du body a 100kb
   app.use(express.json({ limit: '100kb' }));
   app.use(express.urlencoded({ limit: '100kb', extended: true }));
 
-  // Helmet ajoute des en-tetes de securite HTTP (ex. X-Frame-Options, X-Content-Type-Options)
-  // Il ne remplace pas la validation ni l'authentification
+  // headers de securite
   app.use(helmet());
 
-  // CORS restreint quels navigateurs peuvent lire les reponses de cette API
-  // Il ne bloque pas les clients non-navigateurs (ex. Postman, serveurs)
-  const originesAutorisees = (process.env.CORS_ORIGINS || 'http://localhost:5173').split(',');
+  // cors pour autoriser le frontend
+  const origines = (process.env.CORS_ORIGINS || 'http://localhost:5173').split(',');
   app.enableCors({
-    origin: originesAutorisees,
+    origin: origines,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Accept'],
   });
@@ -38,9 +36,7 @@ async function bootstrap() {
     defaultVersion: '1',
   });
 
-  // whitelist  : proprietes inconnues des DTO sont ignorees silencieusement
-  // forbidNonWhitelisted : proprietes inconnues declenchent une erreur 400
-  // transform  : convertit les valeurs vers les types des DTO (ex. string -> number)
+  // validation des dtos
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

@@ -29,9 +29,9 @@ export class PlacesController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Creation d endroit' })
-  @ApiResponse({ status: 201, description: 'Endroit cree avec succes', type: Place })
-  @ApiResponse({ status: 400, description: 'Donnees invalides ou proprietes non autorisees' })
-  @ApiResponse({ status: 409, description: 'Conflit : un endroit avec ce nom existe deja' })
+  @ApiResponse({ status: 201, description: 'Endroit cree', type: Place })
+  @ApiResponse({ status: 400, description: 'Donnees invalides' })
+  @ApiResponse({ status: 409, description: 'Nom deja utilise' })
   async create(
     @Body() createPlaceDto: CreatePlaceDto,
     @Res({ passthrough: true }) res: Response,
@@ -43,16 +43,16 @@ export class PlacesController {
 
   // liste les endroits avec filtres
   @Get()
-  @ApiOperation({ summary: 'Lister les endroits avec pagination et filtrage' })
-  @ApiResponse({ status: 200, description: 'Liste des endroits paginee' })
-  @ApiResponse({ status: 400, description: 'Parametres de requete invalides' })
+  @ApiOperation({ summary: 'Lister les endroits' })
+  @ApiResponse({ status: 200, description: 'Liste des endroits' })
+  @ApiResponse({ status: 400, description: 'Parametres invalides' })
   async findAll(@Query() query: PaginationQueryDto) {
     return this.placesService.findAll(query);
   }
 
   // un endroit par id
   @Get(':id')
-  @ApiOperation({ summary: 'Consulter un endroit par son identifiant' })
+  @ApiOperation({ summary: 'Consulter un endroit' })
   @ApiResponse({ status: 200, description: 'Endroit trouve', type: Place })
   @ApiResponse({ status: 404, description: 'Endroit introuvable' })
   async findOne(@Param('id') id: string): Promise<Place> {
@@ -61,11 +61,11 @@ export class PlacesController {
 
   // modifie un endroit
   @Patch(':id')
-  @ApiOperation({ summary: 'Modifier partiellement un endroit' })
-  @ApiResponse({ status: 200, description: 'Endroit mis a jour', type: Place })
-  @ApiResponse({ status: 400, description: 'Donnees invalides ou champs non modifiables fournis' })
+  @ApiOperation({ summary: 'Modifier un endroit' })
+  @ApiResponse({ status: 200, description: 'Endroit modifie', type: Place })
+  @ApiResponse({ status: 400, description: 'Donnees invalides' })
   @ApiResponse({ status: 404, description: 'Endroit introuvable' })
-  @ApiResponse({ status: 409, description: 'Conflit : nouveau nom deja utilise' })
+  @ApiResponse({ status: 409, description: 'Nom deja utilise' })
   async update(
     @Param('id') id: string,
     @Body() updatePlaceDto: UpdatePlaceDto,
@@ -77,9 +77,9 @@ export class PlacesController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Supprimer un endroit' })
-  @ApiResponse({ status: 204, description: 'Endroit supprime avec succes' })
+  @ApiResponse({ status: 204, description: 'Endroit supprime' })
   @ApiResponse({ status: 404, description: 'Endroit introuvable' })
-  @ApiResponse({ status: 409, description: 'Conflit : suppression refusee car l endroit possede des avis' })
+  @ApiResponse({ status: 409, description: 'Conflit suppression avec avis' })
   async remove(@Param('id') id: string): Promise<void> {
     return this.placesService.remove(id);
   }

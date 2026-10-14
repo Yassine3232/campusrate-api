@@ -31,7 +31,7 @@ import { ContentTypeMiddleware } from './common/middleware/content-type.middlewa
         autoIndex: process.env.NODE_ENV !== 'production',
       }),
     }),
-    // Option H1 : Limitation du debit de requetes (Rate limiting)
+    // rate limiter pour bloquer les spams
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -54,8 +54,7 @@ import { ContentTypeMiddleware } from './common/middleware/content-type.middlewa
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    // Option L1 : Journalisation INFO pour toutes les requetes
-    // Option H3 : Verification du Content-Type pour les mutations
+    // middlewares pour logger et verifier le content-type
     consumer.apply(LoggingMiddleware, ContentTypeMiddleware).forRoutes('*');
   }
 }

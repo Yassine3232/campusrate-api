@@ -1,8 +1,7 @@
 import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 
-// Middleware de journalisation INFO (Option L1)
-// Journalise methode, chemin, code statut et temps d execution sans donnees sensibles
+// middleware pour logger les requetes
 @Injectable()
 export class LoggingMiddleware implements NestMiddleware {
   private readonly logger = new Logger('HTTP');
