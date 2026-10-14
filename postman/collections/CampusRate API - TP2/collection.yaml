@@ -1,0 +1,15 @@
+$schema: 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json'
+$kind: collection
+info:
+  name: 'CampusRate API - TP2'
+  description: 'Collection Postman pour l''API REST CampusRate (TP2 - MongoDB, Mongoose). Couvre les 15 scénarios de démonstration vidéo.'
+variable:
+  - key: baseUrl
+    value: 'http://localhost:3000/api/v1'
+    type: string
+  - key: placeId
+    value: ''
+    type: string
+  - key: reviewId
+    value: ''
+    type: string

@@ -1,0 +1,33 @@
+$kind: http-request
+description: "Scénario vidéo 1 : Création valide. Doit retourner 201 Created, en-tête Location avec l'URL du nouvel endroit, et le corps sans _id ni __v (id string exposé)."
+url: "{{baseUrl}}/places"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "name": "Bibliothèque des sciences",
+      "description": "Espace d'étude silencieux avec bureaux individuels et prises.",
+      "category": "LIBRARY",
+      "address": "Pavillon B, local B-210",
+      "services": ["WIFI", "POWER_OUTLETS"],
+      "status": "ACTIVE"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 201", function () {
+          pm.response.to.have.status(201);
+      });
+      pm.test("Location header is present", function () {
+          pm.response.to.have.header("Location");
+      });
+      var json = pm.response.json();
+      pm.expect(json).to.have.property("id");
+      pm.expect(json).to.not.have.property("_id");
+      pm.expect(json).to.not.have.property("__v");
+      pm.collectionVariables.set("placeId", json.id);
+    language: text/javascript
+order: 1000

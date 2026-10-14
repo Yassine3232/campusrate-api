@@ -1,0 +1,26 @@
+$kind: http-request
+description: "Option M1 : Index unique sur 'name' déclenchant l'erreur MongoDB 11000 traduite en 409 Conflict Problem Details."
+url: "{{baseUrl}}/places"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "name": "Bibliothèque des sciences",
+      "description": "Autre endroit avec le même nom",
+      "category": "LIBRARY",
+      "address": "Pavillon B, autre local"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 409", function () {
+          pm.response.to.have.status(409);
+      });
+      pm.test("Content-Type is problem+json", function () {
+          pm.expect(pm.response.headers.get("Content-Type")).to.include("application/problem+json");
+      });
+    language: text/javascript
+order: 9000
