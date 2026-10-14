@@ -13,15 +13,14 @@ CampusRate offre une plateforme centralisée pour répertorier les espaces du ca
 
 ## Fonctionnalités principales (TP2)
 
-- **Persistance NoSQL avec MongoDB & Mongoose** : remplacement intégral du fichier JSON par deux collections MongoDB (`places` et `reviews`).
+- **Persistance NoSQL avec MongoDB & Mongoose** : remplacement intégral du stockage fichier par deux collections MongoDB (`places` et `reviews`).
 - **Gestion des endroits (`places`)** : création, consultation détaillée, modification partielle, suppression contrôlée.
 - **Gestion des appréciations (`reviews`)** : publication liée à un endroit parent, consultation unitaire et par endroit, mise à jour, suppression.
 - **Agrégation MongoDB ($group)** : calcul dynamique et immédiat de la note moyenne (`averageRating`) et du nombre d'avis (`reviewCount`) sans intervention du client.
 - **Validation globale stricte** : rejet immédiat des requêtes contenant des champs inconnus ou non autorisés (`whitelist: true, forbidNonWhitelisted: true`).
-- **Protection des données gérées par le serveur** : impossibilité d'injecter ou de modifier `id`, `averageRating`, `reviewCount`, `createdAt` ou `updatedAt`.
+- **Protection des données gérées par le serveur** : impossibilité d'injecter ou de modifier `averageRating`, `reviewCount`, `createdAt` ou `updatedAt`.
 - **Format d'erreurs standardisé** : gestion centralisée au standard RFC 9457 Problem Details (`application/problem+json`).
-- **Sécurisation HTTP** : en-têtes sécurisés avec Helmet, restriction CORS configurable, limitation de débit (Throttler), limitation de la taille du corps (100 kb), vérification du Content-Type.
-- **Journalisation structurée** : logs HTTP de niveau INFO (méthode, chemin, statut, durée) et journalisation distincte de niveau ERROR sans fuite de données sensibles.
+- **Sécurisation HTTP** : en-têtes sécurisés avec Helmet, restriction CORS configurable par environnement.
 
 ---
 
@@ -30,7 +29,7 @@ CampusRate offre une plateforme centralisée pour répertorier les espaces du ca
 - **NestJS** (v12) avec Node.js & TypeScript
 - **MongoDB** & **Mongoose** (`@nestjs/mongoose`, `mongoose`)
 - **Validation & Transformation** : `class-validator`, `class-transformer`, `joi`
-- **Sécurité** : `helmet`, `@nestjs/throttler`
+- **Sécurité** : `helmet`, CORS
 - **Documentation** : Swagger / OpenAPI (`@nestjs/swagger`)
 - **Tests & Démonstration** : Postman (`campusrate.postman_collection.json`)
 
