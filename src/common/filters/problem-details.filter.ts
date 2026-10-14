@@ -8,6 +8,16 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 
+const TITRES: Record<number, string> = {
+  400: 'Bad Request',
+  404: 'Not Found',
+  409: 'Conflict',
+  413: 'Payload Too Large',
+  415: 'Unsupported Media Type',
+  422: 'Unprocessable Entity',
+  429: 'Too Many Requests',
+};
+
 @Catch()
 export class ProblemDetailsFilter implements ExceptionFilter {
   private readonly logger = new Logger(ProblemDetailsFilter.name);
@@ -18,74 +28,38 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     const requete = contexte.getRequest<Request>();
 
     let statut = HttpStatus.INTERNAL_SERVER_ERROR;
-    let titre = 'Internal Server Error';
     let detail = 'Une erreur interne inattendue est survenue.';
 
     if (exception instanceof HttpException) {
       statut = exception.getStatus();
+      const contenu = exception.getResponse();
 
-      if (statut === HttpStatus.BAD_REQUEST) {
-        titre = 'Bad Request';
-      } else if (statut === HttpStatus.NOT_FOUND) {
-        titre = 'Not Found';
-      } else if (statut === HttpStatus.CONFLICT) {
-        titre = 'Conflict';
-      } else if (statut === HttpStatus.UNPROCESSABLE_ENTITY) {
-        titre = 'Unprocessable Entity';
-      } else if (statut === HttpStatus.TOO_MANY_REQUESTS) {
-        titre = 'Too Many Requests';
-      } else if (statut === HttpStatus.PAYLOAD_TOO_LARGE) {
-        titre = 'Payload Too Large';
-      } else if (statut === HttpStatus.UNSUPPORTED_MEDIA_TYPE) {
-        titre = 'Unsupported Media Type';
-      } else {
-        titre = 'Erreur';
-      }
-
-      const contenuErreur = exception.getResponse();
-
-      if (typeof contenuErreur === 'string') {
-        detail = contenuErreur;
-      } else if (typeof contenuErreur === 'object' && contenuErreur !== null) {
-        const objetErreur = contenuErreur as any;
-
-        if (Array.isArray(objetErreur.message)) {
-          detail = objetErreur.message.join(', ');
-        } else if (typeof objetErreur.message === 'string') {
-          detail = objetErreur.message;
-        } else if (typeof objetErreur.error === 'string') {
-          detail = objetErreur.error;
-        }
+      if (typeof contenu === 'string') {
+        detail = contenu;
+      } else if (typeof contenu === 'object' && contenu !== null) {
+        const obj = contenu as any;
+        detail = Array.isArray(obj.message)
+          ? obj.message.join(', ')
+          : obj.message || obj.error || detail;
       }
     } else if (exception instanceof Error) {
-      const erreur = exception as any;
+      const err = exception as any;
 
-      if (erreur.code === 11000) {
-        // doublon sur un index unique
+      if (err.code === 11000) {
         statut = HttpStatus.CONFLICT;
-        titre = 'Conflict';
         detail = 'Une ressource avec ces données existe déjà.';
-      } else if (
-        erreur.name === 'CastError' ||
-        erreur.name === 'ValidationError'
-      ) {
-        // id ou donnees mongoose invalides
+      } else if (err.name === 'CastError' || err.name === 'ValidationError') {
         statut = HttpStatus.BAD_REQUEST;
-        titre = 'Bad Request';
         detail = 'Données invalides.';
-      } else if (erreur.type === 'entity.too.large' || erreur.status === 413) {
-        // body trop lourd
+      } else if (err.type === 'entity.too.large' || err.status === 413) {
         statut = HttpStatus.PAYLOAD_TOO_LARGE;
-        titre = 'Payload Too Large';
         detail = 'Le corps de la requête dépasse la taille maximale autorisée.';
       } else {
-        // log l erreur dans la console sans la montrer au client
-        this.logger.error(
-          `Erreur sur ${requete.method} ${requete.url}: ${erreur.message}`,
-          erreur.stack,
-        );
+        this.logger.error(`Erreur sur ${requete.method} ${requete.url}: ${err.message}`, err.stack);
       }
     }
+
+    const titre = TITRES[statut] || 'Erreur';
 
     reponse.setHeader('Content-Type', 'application/problem+json');
     reponse.status(statut).json({
